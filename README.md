@@ -27,7 +27,7 @@ parameters, then use the function called **run** to actually execute the
 metaheuristic algorithms.
 
 The problem instance data should be in a text file formatted as indicated in
-the TSPLIB documentation for the symmetric TSP.
+the [TSPLIB](https://www.iwr.uni-heidelberg.de/groups/comopt/software/TSPLIB95/) documentation ([here](https://www.iwr.uni-heidelberg.de/groups/comopt/software/TSPLIB95/tsp95.pdf)) for the symmetric TSP.
 
 ## Requirements
 
