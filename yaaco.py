@@ -667,7 +667,7 @@ class ACO(Problem):
 
         # 2. Loop
         while not self.termination_criteria():
-            print("\nIteration {0}".format(self.iteration))
+            print("Iteration {0}".format(self.iteration))
             construct_solutions()
 
             # Local search (optional)
@@ -827,7 +827,7 @@ class ACO(Problem):
         # while len(ant.tree) != (self.n - 2):
         while step < (self.n - 1):
             step += 1
-            print("Step {0}".format(step))
+            # print("Step {0}".format(step))
 
             if verbose:
                 print("  AA={0} ({1})".format(AA, len(AA)))
@@ -1178,13 +1178,57 @@ class ACO(Problem):
                 best_ant = ant.clone()
         return best_ant
 
+
+def optim_layout_aco(instance, executions, **kwargs):
+    """ Optimize layout with ACO
+
+    Optimization of network topology (layout)
+
+    :param instance: file name of the problem instance
+    :param int executions: times the ACO algorithm will be executed
+    :param str path: path to save the results and statistics
+    :param str input_file: file name to save the results and statistics
+    """
+    # Get the parameters
+    savedir = kwargs.get('savedir', 'results/')
+
+    best = None
+    t = datetime.now()       # File names will be identified by its exec time
+    f = '%Y_%m_%d-%H_%M_%S'  # Date format
+    # File names to save the statistics, network plot and solution
+    stats = savedir + 'aco_layout_' + datetime.strftime(t, f) + '.csv'
+    net_img = stats[:-4] + '_network.png'
+    sol_file = stats[:-4] + '.txt'
+
+    # Execute the ACO algorithm the specified times
+    for i in range(executions):
+        aco1 = ACO(m, file_name, rho, alpha, beta, nn_ants, max_iters,
+                   use_base_graph=False, instance_type=problem)
+        b = aco1.run()
+
+        # Initialize the best individual
+        if (i == 0) or (b.tour_length < best.tour_length):
+            best = b
+
+    # Print best ant (solution)
+    print('*** OVERALL BEST ***')
+    print(best)
+
+    # Save the best solution to a text file
+    with open(sol_file, 'w') as f:
+        f.write('{0}'.format(best))
+
+    return best
+
 if __name__ == "__main__":
+    # Directory and files to save statistics
+    directory = "results/layout_network09"
 
     # Problem instance
-    file_name = "../networks_design/data/network12.csv"
+    file_name = "test_data/network09.csv"
 
     # Parameters for Ant System
-    m = 12
+    m = 9  # This should be same as problem dimension
     rho = 0.02
     alpha = 1.0
     beta = 2.0
