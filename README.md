@@ -4,7 +4,7 @@ Yet Another Ant Colony Optimization Python Implementation
 An attempt to code the Ant Colony Optimization (ACO) metaheuristic in
 Python 2.7 language.
 
-To understand what this code does you should probably read the recommended
+To understand what this code, first you should probably read the recommended
 references and bibliography.
 
 ## Problems
@@ -37,10 +37,18 @@ This framework requires:
 * Matplotlib
 
 NOTE: For people new to Python, it is recommended to install a distribution
-like **Anaconda** or **Python(x,y)** in order to get the requirements easily.
-Be sure to install a Python 2 (not Python 3) instance.
+like **Anaconda** (or maybe **Python(x,y)**) in order to get the requirements
+easily. Be sure to install a Python 2 (not Python 3) instance.
 
 ## Installation
+
+Clone this project to your computer:
+
+'''
+git clone https://github.com/ecoslacker/yaaco.git
+'''
+
+or download a **zip** copy and extract it.
 
 This framework does not require installation, just copy the directory and run
 the main script from a Python interpreter.
