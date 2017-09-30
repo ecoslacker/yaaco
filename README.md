@@ -37,8 +37,9 @@ This framework requires:
 * Matplotlib
 
 NOTE: For people new to Python, it is recommended to install a distribution
-like **Anaconda** (or maybe **Python(x,y)**) in order to get the requirements
-easily. Be sure to install a Python 2 (not Python 3) instance.
+like [Anaconda](https://www.anaconda.com/) (or maybe
+[Python(x,y)](https://python-xy.github.io/)) in order to get the
+requirements easily. Be sure to install a Python 2 (not Python 3) instance.
 
 ## Installation
 
