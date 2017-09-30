@@ -369,8 +369,7 @@ class ACO(Problem):
     SIZE_NET = 2  # Network pipe sizing problem
     LOOP_NET = 3  # Looped network layout problem
 
-    def __init__(self, ants, filename, rho=0.5, alpha=1.0, beta=2.0,
-                 nn_ants=20, max_iters=100, **kwargs):
+    def __init__(self, ants, filename, nn_ants=20, **kwargs):
         """ Initialize
 
         Set parameters and initializes pheromone trails
@@ -381,10 +380,11 @@ class ACO(Problem):
         assert type(ants) is int, "The number of ants should be integer"
         # Initialize class variables from arguments
         self.ants = ants
-        self.alpha = alpha
-        self.beta = beta
-        self.rho = rho
-        self.max_iters = max_iters
+        self.alpha = kwargs.get('alpha', 1.0)
+        self.beta = kwargs.get('beta', 2.0)
+        self.rho = kwargs.get('rho', 0.5)
+        self.nn_ants = kwargs.get('nn_ants', 20)
+        self.max_iters = kwargs.get('max_iters', 100)
         self.flag = kwargs.get('flag', 'AS')           # Flag: Ant System
         self.bg = kwargs.get('use_base_graph', False)  # Use base graph?
         function = kwargs.get('function', None)        # Distance function
@@ -394,7 +394,7 @@ class ACO(Problem):
         Problem.__init__(self, filename, function, ptype=instance_type,
                          name="TSP 0", base=self.bg)
         self.n = self.dimension       # dimension of the problem
-        self.nn_ants = nn_ants        # nearest-neighbors in tour construction
+
         if self.n < self.nn_ants:     # check if this is a small instance
             self.nn_ants = self.n
         self.Cnn = self.compute_tour_length(self.ant)
@@ -1160,7 +1160,7 @@ class ACO(Problem):
     def compute_choice_information(self):
         """ Compute choice information
 
-        Compute the choice information matriz using the pheromone and
+        Compute the choice information matrix using the pheromone and
         heuristic information
 
         """
@@ -1179,68 +1179,17 @@ class ACO(Problem):
         return best_ant
 
 
-def optim_layout_aco(instance, executions, **kwargs):
-    """ Optimize layout with ACO
-
-    Optimization of network topology (layout)
-
-    :param instance: file name of the problem instance
-    :param int executions: times the ACO algorithm will be executed
-    :param str path: path to save the results and statistics
-    :param str input_file: file name to save the results and statistics
-    """
-    # Get the parameters
-    savedir = kwargs.get('savedir', 'results/')
-
-    best = None
-    t = datetime.now()       # File names will be identified by its exec time
-    f = '%Y_%m_%d-%H_%M_%S'  # Date format
-    # File names to save the statistics, network plot and solution
-    stats = savedir + 'aco_layout_' + datetime.strftime(t, f) + '.csv'
-    net_img = stats[:-4] + '_network.png'
-    sol_file = stats[:-4] + '.txt'
-
-    # Execute the ACO algorithm the specified times
-    for i in range(executions):
-        aco1 = ACO(m, file_name, rho, alpha, beta, nn_ants, max_iters,
-                   use_base_graph=False, instance_type=problem)
-        b = aco1.run()
-
-        # Initialize the best individual
-        if (i == 0) or (b.tour_length < best.tour_length):
-            best = b
-
-    # Print best ant (solution)
-    print('*** OVERALL BEST ***')
-    print(best)
-
-    # Save the best solution to a text file
-    with open(sol_file, 'w') as f:
-        f.write('{0}'.format(best))
-
-    return best
-
 if __name__ == "__main__":
-    # Directory and files to save statistics
-    directory = "results/layout_network09"
 
-    # Problem instance
-    file_name = "test_data/network09.csv"
-
-    # Parameters for Ant System
-    m = 9  # This should be same as problem dimension
-    rho = 0.02
-    alpha = 1.0
-    beta = 2.0
-    nn_ants = 20
-    max_iters = 30
+    instance = "test_data/network12.csv"  # Problem instance
+    n_ants = 12                            # Number of ants
 
     # Test a tree-like network layout optimization problem
 
     problem = 'TREE_NET'
     # Create & run the ACO object
-    aco1 = ACO(m, file_name, rho, alpha, beta, nn_ants, max_iters,
-               use_base_graph=False, instance_type=problem)
+    aco1 = ACO(n_ants, instance, rho=0.5, max_iters=30, use_base_graph=False,
+               instance_type=problem)
     best = aco1.run()
     print("\nBest overall solution:")
     print(best)
@@ -1249,7 +1198,7 @@ if __name__ == "__main__":
     # Test a symmetric TSP problem
 
 #    problem = 'TSP'
-#    tsp = ACO(m, file_name, rho, alpha, beta, nn_ants, max_iters)
+#    tsp = ACO(n_ants, instance, rho=0.5, max_iters=30)
 #    best = tsp.run()
 #    print("\nBest overall solution:")
 #    print(best)
