@@ -44,9 +44,9 @@ easily. Be sure to install a Python 2 (not Python 3) instance.
 
 Clone this project to your computer:
 
-'''
+```
 git clone https://github.com/ecoslacker/yaaco.git
-'''
+```
 
 or download a **zip** copy and extract it.
 
