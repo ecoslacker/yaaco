@@ -41,7 +41,8 @@ def optim_layout_aco(instance, executions, **kwargs):
     f = '%Y_%m_%d-%H_%M_%S'  # Date format
     # File names to save the statistics, network plot and solution
     stats = savedir + 'aco_layout_' + datetime.strftime(t, f) + '.csv'
-    net_img = stats[:-4] + '_network.png'
+    network_img = stats[:-4] + '_network.png'
+    base_img = stats[:-4] + '_base.png'
     sol_file = stats[:-4] + '.txt'
 
     # Execute the ACO algorithm the specified times
@@ -64,10 +65,11 @@ def optim_layout_aco(instance, executions, **kwargs):
     print(best)
 
     # Plot the best solution
+    aco1.plot_base_graph(base_img)
     if _ptype == 'TSP':
-        aco1.plot_best_tour()
+        aco1.plot_best_tour(network_img)
     else:
-        aco1.plot_tree(best)
+        aco1.plot_best_tree(network_img)
 
     # Save the best solution to a text file
     with open(sol_file, 'w') as f:
@@ -78,13 +80,13 @@ def optim_layout_aco(instance, executions, **kwargs):
 if __name__ == "__main__":
 
     # Problem instance
-    file_name = "../networks_design/data/network09.csv"
+    file_name = "../networks_design/data/network12.csv"
 
     # Parameters for Ant System
-    m = 9
+    m = 12
     r = 0.5
     aco_iters = 10
-    problem = 'TSP'
+    problem = 'TREE_NET'
 
     execs = 20
 
