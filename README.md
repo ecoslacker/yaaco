@@ -1,24 +1,24 @@
-# YAACO
+# yaaco.py
 Yet Another Ant Colony Optimization Python Implementation
 
-An attempt to code the Ant Colony Optimization (ACO) metaheuristic in
-Python 2.7 language.
+An attempt to code the Ant Colony Optimization (ACO) metaheuristic to solve
+the Traveling Salesman Problem (TSP) in Python 2.7 language.
 
 To understand what this code, first you should probably read the recommended
 references and bibliography.
 
 ## Problems
 
-At the moment this framework only works for two kinds of problems:
+At the moment this script only works to solve the following problems:
 * Symmetric TSP (Traveling Salesman Problem)
-* Tree-like layout networks optimization
+
 
 ## ACO metaheuristic
 
-At the moment this code only includes partial support for AS and MMAS
-algorithms, there are more algorithms in the ACO family that are not yet
-available. They will be added to this code eventually, just be patient and
-check the project change log.
+At the moment this code only includes partial support for the AS algorithm,
+there are more algorithms in the ACO family that are not yet available. They
+will be added to this code eventually, just be patient and check the project
+change log.
 
 ## Usage
 
@@ -39,7 +39,7 @@ This framework requires:
 NOTE: For people new to Python, it is recommended to install a distribution
 like [Anaconda](https://www.anaconda.com/) (or maybe
 [Python(x,y)](https://python-xy.github.io/)) in order to get the
-requirements easily. Be sure to install a Python 2 (not Python 3) instance.
+requirements easily. Be sure to install a Python 2.7 (not Python 3) instance.
 
 ## Installation
 
@@ -61,4 +61,10 @@ the main script from a Python interpreter.
 
 ## License
 
-None
+Copyright 2017-2018 Eduardo Jiménez <ecoslacker@irriapps.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -5,10 +5,10 @@ yaaco.py
 
 Yet Another Ant Colony Optimization Python Implementation
 
-An attempt to code the Ant Colony Optimization (ACO) metaheuristic in
-Python 2.7 language.
+An attempt to code the Ant Colony Optimization (ACO) metaheuristic to solve
+the Traveling Salesman Problem (TSP) in Python 2.7 language.
 
-IMPORTANT: This code only includes AS and MMAS algorithms.
+IMPORTANT: This code only includes AS algorithms. Others to be included.
 
 To understand what this code does you should probably read the book:
 
@@ -27,29 +27,11 @@ from datetime import datetime
 from math import sqrt, pow
 from matplotlib.path import Path
 
+
 # To print complete arrays
 np.set_printoptions(threshold='nan')
 
 MAXFACTOR = 3
-
-
-#def euclidean(x1, y1, x2, y2):
-#    """ Distance
-#
-#    Computes the Euclidean distance between two points (x1, y1) and (x2, y2)
-#
-#    :param float x1: first point x-axis coordinate
-#    :param float y1: first point y-axis coordinate
-#    :param float x2: second point x-axis coordinate
-#    :param float y2: second point y-axis coordinate
-#    :return: distance
-#    """
-#    assert type(x1) is float, "Coordinates should be float type"
-#    assert type(y1) is float, "Coordinates should be float type"
-#    assert type(x2) is float, "Coordinates should be float type"
-#    assert type(y2) is float, "Coordinates should be float type"
-#
-#    return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2))
 
 
 class Ant:
@@ -86,7 +68,7 @@ class Ant:
         text += " Type:    " + str(self.ant_type) + "\n"
         text += " Tour:    " + str(self.tour) + "\n"
         text += " Visited: " + str(self.visited) + "\n"
-        text += " Network: " + str(self.tree) + " (tree-like)\n"
+        text += " Arcs:    " + str(self.tree) + " (tree-like network)\n"
         text += " Tour length: " + str(self.tour_length) + "\n"
         return text
 
@@ -109,11 +91,15 @@ class Problem:
     :param str filename: a tex file with the data of the problem instance
     :param callable func: a function to calculate the distance
     :param str name: the name of the problem (default is "Problem#")
+
+    Possible instances include:
+        TSP:       Symmetric Traveling Salesman Problem
     """
 
     uid = 0
 
     def __init__(self, filename, func, **kwargs):
+
         """ Initialize the problem instance """
         if func is None:
             print("No distance function provided, assuming Euclidean 2D")
@@ -148,6 +134,8 @@ class Problem:
         # If not base graph specified, then create one
         if not self.base:
             self.create_base_graph()
+
+        self.diameters = []
 
     def read_instance(self, base_graph=False):
         """ Read instance
@@ -318,8 +306,8 @@ class Problem:
             codes = [Path.MOVETO, Path.LINETO]
             path = Path(verts, codes)
             ax.add_patch(patches.PathPatch(path, lw=0.5))
-#            plt.xlim([min(self.x) - 50, max(self.x) + 50])
-#            plt.ylim([min(self.y) - 50, max(self.y) + 50])
+            # plt.xlim([min(self.x) - 50, max(self.x) + 50])
+            # plt.ylim([min(self.y) - 50, max(self.y) + 50])
         plt.show()
 
     def euclidean_2D(self, x1, y1, x2, y2):
@@ -364,11 +352,6 @@ class ACO(Problem):
         MMAS: Max-Min Ant System
     """
 
-    TSP = 0  # Symmetric TSP problem
-    TREE_NET = 1  # Tree-like network layout problem
-    SIZE_NET = 2  # Network pipe sizing problem
-    LOOP_NET = 3  # Looped network layout problem
-
     def __init__(self, ants, filename, nn_ants=20, **kwargs):
         """ Initialize
 
@@ -376,6 +359,8 @@ class ACO(Problem):
         """
 
         self.start = datetime.now()
+
+        self.FLAGS = ['AS', 'EAS', 'RAS', 'MMAS']
 
         assert type(ants) is int, "The number of ants should be integer"
         # Initialize class variables from arguments
@@ -428,7 +413,8 @@ class ACO(Problem):
         self.best_so_far_ant.tour_length = np.inf
         self.show_initialization(False, False)
 
-        self.plot_base_graph()
+        # Plot the base graph
+        # self.plot_base_graph()
 
         # Measure initialization time
         self.exec_time = 0
@@ -456,7 +442,6 @@ class ACO(Problem):
         :return: None
         """
         print("Initialization parameters:")
-        print("  Problem:  {0}".format(self.type))
         print("  Ants:     {0}".format(self.ants))
         print("  alpha:    {0}".format(self.alpha))
         print("  beta:     {0}".format(self.beta))
@@ -543,83 +528,6 @@ class ACO(Problem):
             plt.savefig(filename, bbox_inches='tight', dpi=150)
         plt.show()
 
-    def plot_tree(self, ant, filename=''):
-        """ Plot tree
-
-        Plot the tree-like network from the ant
-
-        :param ant, Ant object which tree will be plotted
-        :param str filename: path and file name to save the plot figure
-        """
-        figTree = plt.figure()
-        figTree.clear()
-        plt.scatter(self.x, self.y)
-
-        labels = ['{0}'.format(l) for l in range(len(self.x))]
-        for label, lx, ly in zip(labels, self.x, self.y):
-            plt.annotate(label, xy=(lx, ly), xytext=(-5, 5),
-                         textcoords='offset points')
-        for i in ant.tree:
-            n = self.get_nodes(self.base_graph[i])
-            plt.plot([self.x[n[0]], self.x[n[1]]],
-                     [self.y[n[0]], self.y[n[1]]])
-        plt.title("Best tree-like network")
-        # Save the plot to a file
-        if filename != '':
-            plt.savefig(filename, bbox_inches='tight', dpi=150)
-        plt.show()
-
-    def plot_all_tours(self, filename=''):
-        """ Plot all tours
-
-        Plots all the tours generated by a TSP instance
-        WARNING! Use with caution (see labels and colours list)
-
-        :param str filename: path and file name to save the plot figure
-        """
-        fig2 = plt.figure()
-        ax = fig2.add_subplot(1, 1, 1)
-
-        plt.title("TSP tours")
-        # Plot the nodes
-        labels = ['{0}'.format(l) for l in range(len(self.x))]
-        for label, lx, ly in zip(labels, self.x, self.y):
-            plt.annotate(label, xy=(lx, ly), xytext=(-5, 5),
-                         textcoords='offset points')
-        # Plot the tours of all ants
-        colours = ['black', 'green', 'blue', 'red', 'yellow', 'cyan']
-        for i in range(self.ants):
-            for j in range(self.n):
-                p1 = self.colony[i].tour[j]    # Initial point
-                p2 = self.colony[i].tour[j+1]  # Final point
-                # Draw a line from (x1, y1) to (x2, y2)
-                x1 = self.x[p1]
-                y1 = self.y[p1]
-                x2 = self.x[p2]
-                y2 = self.y[p2]
-                verts = [(x1, y1), (x2, y2)]
-                codes = [Path.MOVETO, Path.LINETO]
-                path = Path(verts, codes)
-                ax.add_patch(patches.PathPatch(path, color=colours[i], lw=0.5))
-                plt.xlim([-50, 250])
-                plt.ylim([-50, 250])
-        # Save the plot to a file
-        if filename != '':
-            plt.savefig(filename, bbox_inches='tight', dpi=150)
-        plt.show()
-
-    def plot_best(self, filename=''):
-        """ Plot best
-
-        Plot the best solution to the problem from the Ant colony.
-
-        :param str filename: path and file name to save the plot figure
-        """
-        if self.itype == 'TSP':
-            self.plot_best_tour(filename)
-        else:
-            self.plot_best_tree(filename)
-
     def plot_best_tour(self, filename=''):
         """ Plot tour
 
@@ -650,36 +558,8 @@ class ACO(Problem):
             codes = [Path.MOVETO, Path.LINETO]
             path = Path(verts, codes)
             ax.add_patch(patches.PathPatch(path, lw=0.5))
-#            plt.xlim([min(self.x) - 50, max(self.x) + 50])
-#            plt.ylim([min(self.y) - 50, max(self.y) + 50])
-        # Save the plot to a file
-        if filename != '':
-            plt.savefig(filename, bbox_inches='tight', dpi=150)
-        plt.show()
-
-    def plot_best_tree(self, filename=''):
-        """ Plot best tree
-
-        Plot the best tree-like network solution from the Ant colony
-
-        :param str filename: path and file name to save the plot figure
-        """
-        figBestTour = plt.figure()
-        ax = figBestTour.add_subplot(1, 1, 1)
-        ax.clear()
-        plt.scatter(self.x, self.y)
-
-        labels = ['{0}'.format(l) for l in range(len(self.x))]
-        for label, lx, ly in zip(labels, self.x, self.y):
-            plt.annotate(label, xy=(lx, ly), xytext=(-5, 5),
-                         textcoords='offset points')
-
-        for i in self.best_so_far_ant.tree:
-            n = self.get_nodes(self.base_graph[i])
-            plt.plot([self.x[n[0]], self.x[n[1]]],
-                     [self.y[n[0]], self.y[n[1]]])
-
-        plt.title("Best tree-like network")
+            # plt.xlim([min(self.x) - 50, max(self.x) + 50])
+            # plt.ylim([min(self.y) - 50, max(self.y) + 50])
         # Save the plot to a file
         if filename != '':
             plt.savefig(filename, bbox_inches='tight', dpi=150)
@@ -694,20 +574,15 @@ class ACO(Problem):
         :return best_so_far_ant: Ant instance with the best tour
         """
         print("*** Running Ant Colony Optimization ***")
-        # 1. Initialize data: this was already done in the __init__ function
-
-        # Selet the proper function to the problem
-        construct_solutions = self.tsp_construct_solutions
-        if self.type != 'TSP':
-            construct_solutions = self.net_construct_solutions
-            print("Problem type: {0}".format(self.type))
+        # 1. Initialize data:
+        # Data initialization was already done in the __init__ function
 
         # 2. Loop
         while not self.termination_criteria():
             print("Iteration {0}".format(self.iteration))
-            construct_solutions()
+            self.tsp_construct_solutions()
 
-            # Local search (optional)
+            # Local search step is optional, nothing to do here!
 
             # Update statistics
             iter_best_ant = self.find_best()
@@ -773,27 +648,6 @@ class ACO(Problem):
             self.compute_tour_length(ant)
         return
 
-    def net_construct_solutions(self):
-        """ Construct network solutions
-
-        Construct valid sollutions for the tree network optimization problem
-        """
-        # 1. Clear ants memory, reset the ant colony
-        self.create_colony(self.type)
-
-        # 2. Assigns an initial random city to each ant
-        # 3. Each ant constructs a complete tour with the
-        #    tree growing algorithm
-        for ant in self.colony:
-            self.tree_growing(ant)
-
-        # 4. Compute ant's network length
-        # (This also could be done inside the Tree Growing Algorithm)
-        for ant in self.colony:
-            self.compute_network_length(ant)
-
-        return
-
     def get_nodes(self, arc):
         """ Get nodes
 
@@ -806,21 +660,6 @@ class ACO(Problem):
         chars = arc.split('-')
         nodes = [int(x) for x in chars]
         return nodes
-
-    def adjacent(self, node, arcs):
-        """ Adjacent
-
-        Generates a list of adjacent arcs to the given node
-
-        :param node, an integer node
-        :param arcs, a list of integer nodes forming a network
-        """
-        adj = []  # Adjacent arcs
-        for i in range(len(arcs)):
-            nodes = self.get_nodes(arcs[i])
-            if node in nodes:
-                adj.append(i)
-        return adj
 
     def adjust_probabilities(self, probabilities):
         """ Adjust probabilities
@@ -837,148 +676,6 @@ class ACO(Problem):
         else:
             prob = probabilities
         return prob
-
-    def tree_growing(self, ant, verbose=False):
-        """ Tree Growing Algorithm
-
-        Tree Growing Algorithm from Walters & Smith (1995)
-
-        :param Ant ant: the Ant object that will construct a tree-like tour
-        :param bool verbose: if True will show usefull information
-        """
-        step = 0
-        AA = []  # set of arcs adjacent to the growing tree
-
-        # Identify the root node Nr
-        Nr = np.random.randint(0, self.n)  # Total nodes of the network
-        ant.tour[step] = Nr  # set of nodes contained within the growing tree
-        ant.visited[Nr] = 1  # Mark as visited=True
-
-        # Initialise AA = [arcs in base graph connected to root'node]
-        AA = self.adjacent(Nr, self.base_graph)
-        if verbose:
-            print("Step {0}".format(step))
-            print("  Random root node: {0}".format(Nr))
-            print("  AA={0} ({1})".format(AA, len(AA)))
-
-        # while len(ant.tree) != (self.n - 2):
-        while step < (self.n - 1):
-            step += 1
-            # print("Step {0}".format(step))
-
-            if verbose:
-                print("  AA={0} ({1})".format(AA, len(AA)))
-
-            # Get the probabilities for the adjacent arcs
-            probabilities = []
-            for _arc in AA:
-                _nodes = self.get_nodes(self.base_graph[_arc])
-                i = _nodes[0]
-                j = _nodes[1]
-                probabilities.append(self.choice_info[i][j])
-
-            if verbose:
-                print("  Node\tProbability")
-                for aa, pp in zip(AA, probabilities):
-                    print("  {0}:\t{1}".format(aa, pp))
-
-            # Choose an arc, a, at random from the adjacent arcs
-            probabilities = self.adjust_probabilities(probabilities)
-            a = int(np.random.choice(AA, 1, p=probabilities))
-            ant.tree.append(a)  # Add arc to tree-like network
-
-            # Identify newly connected node, N
-            nodes = self.get_nodes(self.base_graph[a])
-#            N = None  # Just initialize with something dummy
-#            for node in nodes:
-#                if node not in ant.tour:
-#                    # Add note to tour
-#                    N = node
-#                    ant.tour[step] = N
-#                    ant.visited[N] = 1  # Mark as visited=True
-#
-#                    if verbose:
-#                        print(" Newly connected node: {0}".format(N))
-#
-#            if N is None:
-#                print("WARNING! Something is really fucked...")
-#                return
-            if verbose:
-                print("  Selected arc={0} ({1})".format(a, self.base_graph[a]))
-
-            N = None
-            if nodes[0] in ant.tour:
-                N = nodes[1]
-                # Just check if the other node is in tour
-#                if nodes[1] in ant.tour:
-#                    print("ERROR! Both nodes in tour!")
-#                else:
-#                    print("OK!")
-            else:
-                N = nodes[0]
-                # Just check if the other node is in tour
-#                if nodes[1] in ant.tour:
-#                    print("OK!")
-#                else:
-#                    print("ERROR! Neither node in tour!")
-
-            if N is None:
-                print("  WARNING! Something is really fucked...")
-                return
-
-            ant.tour[step] = N
-            ant.visited[N] = 1  # Mark as visited=True
-
-            # Identify adjacent arcs to node N in base graph
-            arcs_connected = self.adjacent(N, self.base_graph)
-
-            if verbose:
-                print("  Newly node N={0}".format(N))
-                print("  Adj arcs to N={0}: {1}".format(N, arcs_connected))
-
-            if a in arcs_connected:
-                # Excluding the previous choosen arc, a
-                arcs_connected.remove(a)
-
-            # Update AA, by removing arc a and any newly infeasible arcs
-
-            # Remove the newly connected arc from list
-            AA.remove(a)
-            if verbose:
-                print("  Removing selected arc: {0}".format(a))
-
-            dummy = 0
-            for arc in arcs_connected:
-                # Is this arc in the adjacent arcs (AA) already?
-                if arc in AA:
-                    # Remove arc from list, as tree is now such that adding
-                    # this arc would cause a loop
-                    if verbose:
-                        print("  Remove infeasible arc: {0} ({1})".format(arc,
-                              self.base_graph[arc]))
-                    AA.remove(arc)
-                else:
-                    # Are both end nodes of this arc in the ant tree?
-                    arc_nodes = self.get_nodes(self.base_graph[arc])
-                    if arc_nodes[0] in ant.tour and arc_nodes[1] in ant.tour:
-                        # Do nothing, leave list unaltered, as adding this
-                        # arc would cause a loop in the tree
-                        dummy += 1
-                    else:
-                        # As there are not other criteria (such as direction)
-                        # add the arc to the list of adjacent arcs to the
-                        # current tree
-                        AA.append(arc)
-                        if verbose:
-                            print("  Add feasible arc: {0} ({1})".format(arc,
-                                  self.base_graph[arc]))
-            # End of step-by-step tree construction
-        # For testing purposes only, this is not the right place for computing
-        # the network length, please do this outside
-#        self.compute_network_length(ant)
-#        print(ant)
-#        self.plot_tree(ant)
-        return
 
     def compute_tour_length(self, ant):
         """ Compute tour length
@@ -1051,16 +748,16 @@ class ACO(Problem):
         # Random number from the interval [0, sum_probabilities), this number
         # correspond to a Uniform Distribution
         r = (sum_probabilities - 0) * np.random.random_sample() + 0
-#        print("\n  Sum prob. not visited: {0}".format(sum_probabilities))
-#        print("  Random probability:    {0}".format(r))
-#        print("  Select. probabilities: {0}".format(selection_probability))
-#        print("  Sum of sel. prob.:  {0}".format(sum(selection_probability)))
+        # print("\n  Sum prob. not visited: {0}".format(sum_probabilities))
+        # print("  Random probability:    {0}".format(r))
+        # print("  Select. probabilities: {0}".format(selection_probability))
+        # print("  Sum of sel. prob.:  {0}".format(sum(selection_probability)))
         j = 0
         p = selection_probability[j]
         while p < r:
             j += 1
             p += selection_probability[j]
-#        print("  p: {0} < r: {1} ({2})".format(p, r, p < r))
+        # print("  p: {0} < r: {1} ({2})".format(p, r, p < r))
         self.colony[k].tour[i] = j
         self.colony[k].visited[j] = 1  # True
         return
@@ -1133,9 +830,6 @@ class ACO(Problem):
         for ant in self.colony:
             self.deposit_pheromone(ant)
 
-#        for i in range(self.ants):
-#            self.deposit_pheromone(i)
-
         self.compute_choice_information()
         return
 
@@ -1155,44 +849,15 @@ class ACO(Problem):
         :param Ant ant: the Ant instance that will be depositing pheromone
         """
         delta = 1.0 / ant.tour_length
-        if self.type == 'TSP':
-            # This is intended for the symmetric TSP
-            for i in range(self.n):
-                j = ant.tour[i]
-                k = ant.tour[i+1]
 
-                # Deposit pheromone, assumming symmetric problem
-                self.pheromone[j][k] = self.pheromone[j][k] + delta
-                self.pheromone[k][j] = self.pheromone[j][k]
-        else:
-            # Get each arc in the tree-like network
-            for a in ant.tree:
-                # Get the string representation of the arc
-                arc = self.base_graph[a]
-                # Get the nodes of the arc
-                nodes = self.get_nodes(arc)
-                j = nodes[0]  # Initial node
-                k = nodes[1]  # End node
+        # This is intended for the symmetric TSP
+        for i in range(self.n):
+            j = ant.tour[i]
+            k = ant.tour[i+1]
 
-                # Deposit the pheromone, assuming symmetric problem
-                self.pheromone[j][k] = self.pheromone[j][k] + delta
-                self.pheromone[k][j] = self.pheromone[j][k]
-
-#    def deposit_pheromone(self, k):
-#        """ Deposit pheromone
-#
-#        Update the pheromone trail for the cities in the ant's tour
-#        This is intended for the symmetric TSP.
-#
-#        :param k: the ant identifier
-#        """
-#        delta = 1.0 / self.colony[k].tour_length
-#        for i in range(self.n):
-#            j = self.colony[k].tour[i]
-#            l = self.colony[k].tour[i+1]
-#            self.pheromone[j][l] = self.pheromone[j][l] + delta
-#            self.pheromone[l][j] = self.pheromone[j][l]  # Symmetric problem
-#        return
+            # Deposit pheromone, assumming symmetric problem
+            self.pheromone[j][k] = self.pheromone[j][k] + delta
+            self.pheromone[k][j] = self.pheromone[j][k]
 
     def compute_choice_information(self):
         """ Compute choice information
@@ -1218,25 +883,18 @@ class ACO(Problem):
 
 if __name__ == "__main__":
 
-    instance = "test_data/network12.csv"  # Problem instance
-    n_ants = 12                            # Number of ants
+    # **** Data for optimization ****
+    instance = 'test_data/network09.csv'
+    n_ants = 20
+    problem = 'TSP'
 
-    # Test a tree-like network layout optimization problem
+    # Create the ACO object & run
+    tsp = ACO(n_ants, instance, rho=0.5, max_iters=100)
+    best = tsp.run()
 
-    problem = 'TREE_NET'
-    # Create & run the ACO object
-    aco1 = ACO(n_ants, instance, rho=0.5, max_iters=30, use_base_graph=False,
-               instance_type=problem)
-    best = aco1.run()
+    # Show the results
+    # print("\nBase graph:")
+    # tsp.plot_base_graph()
     print("\nBest overall solution:")
     print(best)
-    aco1.plot_best_tree()
-
-    # Test a symmetric TSP problem
-
-#    problem = 'TSP'
-#    tsp = ACO(n_ants, instance, rho=0.5, max_iters=30)
-#    best = tsp.run()
-#    print("\nBest overall solution:")
-#    print(best)
-#    tsp.plot_best_tour()
+    tsp.plot_best_tour()
