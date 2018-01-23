@@ -56,7 +56,6 @@ class Ant:
 
         self.tour = np.ones(self.size, dtype=np.int64) * -1
         self.visited = np.zeros(self.size, dtype=np.int64)
-        self.tree = []
 
         if self.ant_type == 'TSP':
             self.tour = np.ones(self.size+1, dtype=np.int64) * -1
@@ -68,7 +67,6 @@ class Ant:
         text += " Type:    " + str(self.ant_type) + "\n"
         text += " Tour:    " + str(self.tour) + "\n"
         text += " Visited: " + str(self.visited) + "\n"
-        text += " Arcs:    " + str(self.tree) + " (tree-like network)\n"
         text += " Tour length: " + str(self.tour_length) + "\n"
         return text
 
@@ -81,7 +79,6 @@ class Ant:
         ant.tour_length = self.tour_length
         ant.tour = self.tour.copy()
         ant.visited = self.visited.copy()
-        ant.tree = self.tree[:]
         return ant
 
 
@@ -884,17 +881,18 @@ class ACO(Problem):
 if __name__ == "__main__":
 
     # **** Data for optimization ****
-    instance = 'test_data/network09.csv'
-    n_ants = 20
+    instance = 'test_data/network64.csv'
+    instance = 'eil51.tsp'
+    n_ants = 25
     problem = 'TSP'
 
     # Create the ACO object & run
-    tsp = ACO(n_ants, instance, rho=0.5, max_iters=100)
-    best = tsp.run()
+    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=2000)
+    best = tsp_aco.run()
 
     # Show the results
     # print("\nBase graph:")
-    # tsp.plot_base_graph()
+    # tsp_aco.plot_base_graph()
     print("\nBest overall solution:")
     print(best)
-    tsp.plot_best_tour()
+    tsp_aco.plot_best_tour()
