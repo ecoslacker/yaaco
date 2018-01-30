@@ -881,8 +881,8 @@ class ACO(Problem):
 if __name__ == "__main__":
 
     # **** Data for optimization ****
-    instance = 'test_data/network64.csv'
-    instance = 'eil51.tsp'
+    #instance = 'test_data/network64.csv'
+    instance = 'test_data/eil51.tsp'
     n_ants = 25
     problem = 'TSP'
 
