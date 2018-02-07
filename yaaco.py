@@ -371,6 +371,10 @@ class ACO(Problem):
         self.bg = kwargs.get('use_base_graph', False)  # Use base graph?
         function = kwargs.get('function', None)        # Distance function
         instance_type = kwargs.get('instance_type', 'TSP')  # Problem instance
+        
+        if self.flag not in self.FLAGS:
+            print("Unkown flag")
+            exit(1)
 
         # Initialize the Problem instance
         Problem.__init__(self, filename, function, ptype=instance_type,
@@ -484,13 +488,13 @@ class ACO(Problem):
     def plot_nodes(self, filename=''):
         """ Plot nodes
 
-        Plots the nodes of the network
+        Plots the nodes of the problem
 
         :param str filename: path and file name to save the plot figure
         """
         fig1 = plt.figure()
         fig1.clear()
-        plt.title("Network: " + self.name)
+        plt.title("Problem: " + self.name)
         plt.scatter(self.x, self.y)
         labels = ['{0}'.format(l) for l in range(len(self.x))]
         for label, lx, ly in zip(labels, self.x, self.y):
@@ -696,30 +700,6 @@ class ACO(Problem):
         ant.tour_length = length
         return ant.tour_length
 
-    def compute_network_length(self, ant):
-        """ Compute network length
-
-        Compute the length of the Ant tour using the arc (edge) information
-
-        :param Ant ant: the Ant object to compute the network length
-        :return: float tour length
-        """
-        length = 0.0
-        for a in ant.tree:
-            # Get the string representation of the arc
-            arc = self.base_graph[a]
-            # Get the nodes of the arc
-            nodes = self.get_nodes(arc)
-            j = nodes[0]  # Initial node
-            k = nodes[1]  # End node
-            x1 = self.x[j]
-            x2 = self.x[k]
-            y1 = self.y[j]
-            y2 = self.y[k]
-            length += self.func(x1, y1, x2, y2)  # Distance function
-        ant.tour_length = length
-        return length
-
     def as_decision_rule(self, k, i):
         """ AS decision rule
 
@@ -881,13 +861,13 @@ class ACO(Problem):
 if __name__ == "__main__":
 
     # **** Data for optimization ****
-    #instance = 'test_data/network64.csv'
+    # instance = 'test_data/network64.csv'
     instance = 'test_data/eil51.tsp'
     n_ants = 25
-    problem = 'TSP'
 
     # Create the ACO object & run
-    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=2000)
+    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=100, flag='AS')
+    # tsp_aco.plot_nodes()
     best = tsp_aco.run()
 
     # Show the results
