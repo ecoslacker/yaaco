@@ -45,7 +45,7 @@ class Ant:
 
     uid = 0
 
-    def __init__(self, size, atype='TSP'):
+    def __init__(self, size, atype='Symmetric TSP'):
         """ Initialize the Ant object """
         assert type(size) is int, "The Ant size should be integer type"
         self.size = size
@@ -57,8 +57,7 @@ class Ant:
         self.tour = np.ones(self.size, dtype=np.int64) * -1
         self.visited = np.zeros(self.size, dtype=np.int64)
 
-        if self.ant_type == 'TSP':
-            self.tour = np.ones(self.size+1, dtype=np.int64) * -1
+        self.tour = np.ones(self.size+1, dtype=np.int64) * -1
 
     def __str__(self):
         """ String representation of the Ant object """
@@ -105,15 +104,13 @@ class Problem:
             self.func = func
         self.file_instance = filename
         self.name = kwargs.get('name', 'Problem{0}'.format(self.uid))
-        self.type = kwargs.get('ptype', 'TSP')
-        self.base = kwargs.get('base', False)
+        self.type = kwargs.get('ptype', 'Symmetric TSP')
 
         # Initialize some variables
         self.file_graph = ''
-        self.base_graph = []
 
         # WARNING! This will overwrite the name of the problem
-        self.x, self.y, self.name = self.read_instance(self.base)
+        self.x, self.y, self.name = self.read_instance()
 
         assert len(self.x) > 0, "Coordinates list is empty"
         assert len(self.y) > 0, "Coordinates list is empty"
@@ -128,19 +125,14 @@ class Problem:
         self.compute_nearest_neighbor()  # nn_list
         self.nn_tour_tsp()  # Nearest-neighbor tour initialization
 
-        # If not base graph specified, then create one
-        if not self.base:
-            self.create_base_graph()
-
         self.diameters = []
 
-    def read_instance(self, base_graph=False):
-        """ Read instance
+    def read_instance_tsp(self):
+        """ Read instance TSP
 
         Reads the problem instance from a text delimited file, the file must
         be formatted as the *.tsp type as described in TSPLIB
 
-        :param base_graph, a boolean indicating if a base graph is required
         :return x, the x-axis coordinates of the instance
         :return y, the y-axis coordinates of the instance
         :return name, the name of the instance
@@ -149,15 +141,8 @@ class Problem:
         x = []
         y = []
         name = ''
+
         try:
-            if base_graph:
-                self.file_graph = self.file_instance[:-4] + '_base.csv'
-                print("Using base graph from: {0}".format(self.file_graph))
-                with open(self.file_graph, 'r') as f:
-                    self.base_graph = f.read().split('\n')
-                    # Remove empty lines
-                    if '' in self.base_graph:
-                        self.base_graph.remove('')
             read = False  # Token that indicates when to read the coordinates
             with open(self.file_instance, 'r') as f:
                 reader = csv.reader(f, delimiter=' ')
@@ -174,6 +159,65 @@ class Problem:
         except IOError as e:
             z = e
             print(z)
+        return x, y, name
+
+    def read_instance_csv(self):
+        """ Read instance
+
+        Reads the problem instance from a text delimited file, the file must
+        be formatted as Comma Separated Values text file with extensions *.csv
+        or *.txt
+
+        :return x, the x-axis coordinates of the instance
+        :return y, the y-axis coordinates of the instance
+        :return name, the name of the instance
+        """
+        x = []
+        y = []
+        name = ''
+
+        try:
+            with open(self.file_instance, 'r') as f:
+                reader = csv.reader(f, delimiter=',')
+                for row in reader:
+                    if len(row) < 2:
+                        break
+                    if len(row) == 2:
+                        x.append(float(row[0]))
+                        y.append(float(row[1]))
+                    elif len(row) == 3:
+                        x.append(float(row[1]))
+                        y.append(float(row[2]))
+        except IOError as e:
+            z = e
+            print(z)
+
+        return x, y, name
+
+    def read_instance(self):
+        """ Read instance
+
+        Reads the problem instance from a text delimited file
+
+        :return x, the x-axis coordinates of the instance
+        :return y, the y-axis coordinates of the instance
+        :return name, the name of the instance
+        """
+
+        x = []
+        y = []
+        name = ''
+        ext = self.file_instance[-4:]  # File extension
+
+        # Identify the text file
+        if ext == '.tsp':
+            return self.read_instance_tsp()
+        elif ext == '.csv' or ext == '.txt':
+            return self.read_instance_csv()
+        else:
+            print('Cannot indetify file type, trying as CSV')
+            return self.read_instance_csv()
+
         return x, y, name
 
     def compute_distances(self):
@@ -224,24 +268,6 @@ class Problem:
         self.nn_list = np.array(nn)
 
         return self.nn_list
-
-    def create_base_graph(self):
-        """ Create base graph
-
-        Creates a base graph using every possible combination of the nodes
-        in the problem.
-        WARNING! This could be time consuming!
-        """
-        self.base_graph = []
-        for i in range(self.dimension):
-            for j in range(self.dimension):
-                if i != j:
-                    edge1 = '{0}-{1}'.format(i, j)
-                    edge2 = '{0}-{1}'.format(j, i)
-                    if (edge1 not in self.base_graph) and \
-                       (edge2 not in self.base_graph):
-                        self.base_graph.append(edge1)
-        return self.base_graph
 
     def nn_tour_tsp(self, ttype='TSP'):
         """ A TSP tour generated by the nearest-neighbor heuristic
@@ -360,6 +386,9 @@ class ACO(Problem):
         self.FLAGS = ['AS', 'EAS', 'RAS', 'MMAS']
 
         assert type(ants) is int, "The number of ants should be integer"
+        assert type(filename) is str, "File name should be a string"
+        assert type(nn_ants) is int, "nn_ants should be integer"
+
         # Initialize class variables from arguments
         self.ants = ants
         self.alpha = kwargs.get('alpha', 1.0)
@@ -368,17 +397,14 @@ class ACO(Problem):
         self.nn_ants = kwargs.get('nn_ants', 20)
         self.max_iters = kwargs.get('max_iters', 100)
         self.flag = kwargs.get('flag', 'AS')           # Flag: Ant System
-        self.bg = kwargs.get('use_base_graph', False)  # Use base graph?
         function = kwargs.get('function', None)        # Distance function
-        instance_type = kwargs.get('instance_type', 'TSP')  # Problem instance
-        
-        if self.flag not in self.FLAGS:
-            print("Unkown flag")
-            exit(1)
+        instance_type = kwargs.get('instance_type', 'Symmetric TSP')
+
+        assert self.flag in self.FLAGS, "Unknown flag"
 
         # Initialize the Problem instance
         Problem.__init__(self, filename, function, ptype=instance_type,
-                         name="TSP 0", base=self.bg)
+                         name="TSP 0")
         self.n = self.dimension       # dimension of the problem
 
         if self.n < self.nn_ants:     # check if this is a small instance
@@ -501,30 +527,6 @@ class ACO(Problem):
             plt.annotate(label, xy=(lx, ly), xytext=(-5, 5),
                          textcoords='offset points')
         # Save the plot to a PNG file
-        if filename != '':
-            plt.savefig(filename, bbox_inches='tight', dpi=150)
-        plt.show()
-
-    def plot_base_graph(self, filename=''):
-        """ Plot base graph
-
-        Plot the base graph from the data file
-
-        :param str filename: path and file name to save the plot figure
-        """
-        figBase = plt.figure()
-        figBase.clear()
-        plt.title("Base graph for: " + self.name)
-        plt.scatter(self.x, self.y)
-        labels = ['{0}'.format(l) for l in range(len(self.x))]
-        for label, lx, ly in zip(labels, self.x, self.y):
-            plt.annotate(label, xy=(lx, ly), xytext=(-5, 5),
-                         textcoords='offset points')
-        for arc in range(len(self.base_graph)):
-            n = self.get_nodes(self.base_graph[arc])
-            plt.plot([self.x[n[0]], self.x[n[1]]],
-                     [self.y[n[0]], self.y[n[1]]])
-        # Save the plot to a file
         if filename != '':
             plt.savefig(filename, bbox_inches='tight', dpi=150)
         plt.show()
@@ -863,6 +865,7 @@ if __name__ == "__main__":
     # **** Data for optimization ****
     # instance = 'test_data/network64.csv'
     instance = 'test_data/eil51.tsp'
+    instance = 'test_data/coordinates'
     n_ants = 25
 
     # Create the ACO object & run
@@ -872,7 +875,6 @@ if __name__ == "__main__":
 
     # Show the results
     # print("\nBase graph:")
-    # tsp_aco.plot_base_graph()
     print("\nBest overall solution:")
     print(best)
     tsp_aco.plot_best_tour()
