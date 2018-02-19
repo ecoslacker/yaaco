@@ -185,7 +185,7 @@ class Problem:
                     if len(row) == 2:
                         x.append(float(row[0]))
                         y.append(float(row[1]))
-                    elif len(row) == 3:
+                    elif len(row) > 2:
                         x.append(float(row[1]))
                         y.append(float(row[2]))
         except IOError as e:
@@ -454,8 +454,19 @@ class ACO(Problem):
         A string representation of the ant colony
         """
 
-        text = "Colony size: " + str(self.ants) + "\n"
-        text += "Problem dimension : " + str(self.n) + "\n"
+        text = "Initialization parameters:\n"
+        text += "  n_ants:    {0}".format(self.ants) + "\n"
+        text += "  alpha:     {0}".format(self.alpha) + "\n"
+        text += "  beta:      {0}".format(self.beta) + "\n"
+        text += "  rho:       {0}".format(self.rho) + "\n"
+        text += "  max_iters: {0}".format(self.max_iters) + "\n"
+        text += "  flag:      {0}".format(self.flag) + "\n"
+        text += "  init tour: {0} (length)".format(self.Cnn) + "\n"
+        if self.flag == 'MMAS':
+            text += "  tau max:   {0}".format(self.tau_max) + "\n"
+            text += "  tau min:   {0}".format(self.tau_min) + "\n"
+        text += "  tau 0:     {0}".format(self.tau_0) + "\n"
+        text += "  dimension: {0}".format(self.n) + "\n"
         i = 0
         for ant in self.colony:
             print(ant)
@@ -469,16 +480,18 @@ class ACO(Problem):
         :return: None
         """
         print("Initialization parameters:")
-        print("  Ants:     {0}".format(self.ants))
-        print("  alpha:    {0}".format(self.alpha))
-        print("  beta:     {0}".format(self.beta))
-        print("  rho:      {0}".format(self.rho))
-        print("  max_iters:{0}".format(self.max_iters))
-        print("  flag:     {0}".format(self.flag))
-        print("  Cnn:      {0} (initial tour length)".format(self.Cnn))
-        print("  Tau max:  {0}".format(self.tau_max))
-        print("  Tau min:  {0}".format(self.tau_min))
-        print("  Tau 0:    {0}".format(self.tau_0))
+        print("  n_ants:    {0}".format(self.ants))
+        print("  alpha:     {0}".format(self.alpha))
+        print("  beta:      {0}".format(self.beta))
+        print("  rho:       {0}".format(self.rho))
+        print("  max_iters: {0}".format(self.max_iters))
+        print("  flag:      {0}".format(self.flag))
+        print("  init tour: {0} (length)".format(self.Cnn))
+        if self.flag == "MMAS":
+            print("  tau max:   {0}".format(self.tau_max))
+            print("  tau min:   {0}".format(self.tau_min))
+        print("  tau 0:     {0}".format(self.tau_0))
+        print("  dimension: {0}".format(self.n))
         if plot:
             print("  Initial tour (Using nearest-neighbor heuristic):")
             self.plot_tour()
@@ -862,14 +875,22 @@ class ACO(Problem):
 
 if __name__ == "__main__":
 
+    start = datetime.now()
+    f = '%Y_%m_%d_%H_%M_%S'   # Date format
+
+    # Save best tour & solution
+    save_plot = 'results/' + datetime.strftime(start, f) + '.png'
+    save_best = 'results/' + datetime.strftime(start, f) + '.txt'
+
     # **** Data for optimization ****
     # instance = 'test_data/network64.csv'
     instance = 'test_data/eil51.tsp'
-    instance = 'test_data/coordinates'
+    # instance = 'test_data/test01'
+
     n_ants = 25
 
     # Create the ACO object & run
-    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=100, flag='AS')
+    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=1000, flag='AS')
     # tsp_aco.plot_nodes()
     best = tsp_aco.run()
 
@@ -877,4 +898,7 @@ if __name__ == "__main__":
     # print("\nBase graph:")
     print("\nBest overall solution:")
     print(best)
-    tsp_aco.plot_best_tour()
+    # Sav
+    with open(save_best, 'w') as f:
+        f.write('{0}\nBest overall solution:\n{1}'.format(tsp_aco, best))
+    tsp_aco.plot_best_tour(save_plot)
