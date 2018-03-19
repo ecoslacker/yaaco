@@ -89,7 +89,15 @@ The best solution is saved in the variable called `best`.
 
 ### Import as module
 
+If you are working in external project that requires to solve a TSP instance,
+you can always import all the classes and functions to your main project. For
+this you only have to copy the `yaaco.py` file and import the classes:
 
+```python
+from yaaco import Ant, Problem, ACO
+```
+
+Note that you need to configure the working directories properly.
 
 ## References
 
