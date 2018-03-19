@@ -899,7 +899,7 @@ if __name__ == "__main__":
     n_ants = 10
 
     # Create the ACO object & run
-    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=50)
+    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=100)
     # tsp_aco.plot_nodes()
     best = tsp_aco.run()
 
