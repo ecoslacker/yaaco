@@ -20,15 +20,6 @@ there are more algorithms in the ACO family that are not yet available. They
 will be added to this code eventually, just be patient and check the project
 change log.
 
-## Usage
-
-To use this code you should create an ACO instance with the proper data and
-parameters, then use the function called **run** to actually execute the
-metaheuristic algorithms.
-
-The problem instance data should be in a text file formatted as indicated in
-the [TSPLIB](https://www.iwr.uni-heidelberg.de/groups/comopt/software/TSPLIB95/) documentation ([here](https://www.iwr.uni-heidelberg.de/groups/comopt/software/TSPLIB95/tsp95.pdf)) for the symmetric TSP.
-
 ## Requirements
 
 This framework requires:
@@ -53,6 +44,50 @@ or download a **zip** copy and extract it.
 
 This framework does not require installation, just copy the directory and run
 the main script from a Python interpreter.
+
+## Usage
+
+To use this code you should create an ACO instance with the proper data and
+parameters, then use the function called **run** to actually execute the
+metaheuristic algorithms.
+
+The problem instance data should be in a text file formatted as indicated in
+the [TSPLIB](https://www.iwr.uni-heidelberg.de/groups/comopt/software/TSPLIB95/) documentation ([here](https://www.iwr.uni-heidelberg.de/groups/comopt/software/TSPLIB95/tsp95.pdf)) for the symmetric TSP.
+
+### Run directly
+
+To use the code directly, open the **yaaco.py** file and go to the end of it.
+There should be a block of code starting with:
+
+```python
+if __name__ == "__main__":
+``
+
+You should not edit the code above this line unless you know what you are doing.
+
+First, you need to create an ACO object. You should pass the proper parameters,
+which are `ants` for the number of ants in the colony, `filename` a string 
+containing the path to a text file with the data (coordinates) of the problem instance, and
+`nn_ants` the number of ants in the nearest-neighbor. Other parameters are optional.
+
+The following code is an example of the creation of an ACO object to solve the `eil51`
+problem, using a colony of 25 ants, 500 iterations and evaporation parameter of 0.2,
+using the the Ant System `AS` algorithm.
+
+```python
+    instance = 'test_data/eil51.tsp'
+    n_ants = 25
+
+    # Create the ACO object & run
+    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=500, flag='AS')
+    best = tsp_aco.run()
+```
+
+The best solution is saved in the variable called `best`.
+
+### Import as module
+
+
 
 ## References
 
