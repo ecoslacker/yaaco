@@ -27,7 +27,9 @@ This framework requires:
 * Numpy
 * Matplotlib
 
-NOTE: For people new to Python, it is recommended to install a distribution
+### Setting up Python
+
+For people new to Python, it is recommended to install a distribution
 like [Anaconda](https://www.anaconda.com/) (or maybe
 [Python(x,y)](https://python-xy.github.io/)) in order to get the
 requirements easily. Be sure to install a Python 2.7 (not Python 3) instance.
@@ -61,7 +63,7 @@ There should be a block of code starting with:
 
 ```python
 if __name__ == "__main__":
-``
+```
 
 You should not edit the code above this line unless you know what you are doing.
 

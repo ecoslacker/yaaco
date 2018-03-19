@@ -884,7 +884,7 @@ if __name__ == "__main__":
     start = datetime.now()
     f = '%Y_%m_%d_%H_%M_%S'  # Date format
 
-    prob = 'poke33'
+    prob = 'eil51.tsp'
 
     # Save best tour & solution
     save_plot = 'results/' + prob + '/' + datetime.strftime(start, f) + '.png'
