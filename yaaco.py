@@ -379,7 +379,7 @@ class ACO(Problem):
         MMAS: Max-Min Ant System
     """
 
-    def __init__(self, ants, filename, nn_ants=20, **kwargs):
+    def __init__(self, ants, filename, **kwargs):
         """ Initialize
 
         Set parameters and initializes pheromone trails
@@ -391,7 +391,6 @@ class ACO(Problem):
 
         assert type(ants) is int, "The number of ants should be integer"
         assert type(filename) is str, "File name should be a string"
-        assert type(nn_ants) is int, "nn_ants should be integer"
 
         # Initialize class variables from arguments
         self.ants = ants
@@ -407,12 +406,21 @@ class ACO(Problem):
         assert self.flag in self.FLAGS, "Unknown flag"
 
         # Initialize the Problem instance
+        #
+        # This allows the ACO class to use functions and variables such as
+        # dimension, nn_ants, compute_nearest_neighbor(), etc...
         Problem.__init__(self, filename, function, ptype=instance_type,
                          name="TSP 0")
         self.n = self.dimension       # dimension of the problem
 
-        if self.n < self.nn_ants:     # check if this is a small instance
-            self.nn_ants = self.n
+        # Enable the use of nn_list if n > nn_ants
+        if self.n > self.nn_ants:
+            self.use_nn = True
+            print(' n={0} > nn_ants={1} (True)'.format(self.n, self.nn_ants))
+        else:
+            self.use_nn = False
+            print(' n={0} <= nn_ants={1} (False)'.format(self.n, self.nn_ants))
+
         self.Cnn = self.compute_tour_length(self.ant)
 
         # Initial pheromone trail
@@ -460,6 +468,7 @@ class ACO(Problem):
 
         text = "Initialization parameters:\n"
         text += "  n_ants:    {0}".format(self.ants) + "\n"
+        text += "  nn_ants:   {0}".format(self.nn_ants) + "\n"
         text += "  alpha:     {0}".format(self.alpha) + "\n"
         text += "  beta:      {0}".format(self.beta) + "\n"
         text += "  rho:       {0}".format(self.rho) + "\n"
@@ -485,6 +494,7 @@ class ACO(Problem):
         """
         print("Initialization parameters:")
         print("  n_ants:    {0}".format(self.ants))
+        print("  nn_ants:   {0}".format(self.nn_ants))
         print("  alpha:     {0}".format(self.alpha))
         print("  beta:      {0}".format(self.beta))
         print("  rho:       {0}".format(self.rho))
@@ -543,6 +553,7 @@ class ACO(Problem):
         for label, lx, ly in zip(labels, self.x, self.y):
             plt.annotate(label, xy=(lx, ly), xytext=(-5, 5),
                          textcoords='offset points')
+        plt.axis('equal')
         # Save the plot to a PNG file
         if filename != '':
             plt.savefig(filename, bbox_inches='tight', dpi=150)
@@ -667,7 +678,10 @@ class ACO(Problem):
             # print(" Step: {0}".format(step))
             step += 1
             for k in range(self.ants):
-                self.as_decision_rule(k, step)
+                if self.use_nn:
+                    self.neighbor_list_as_decision_rule(k, step)
+                else:
+                    self.as_decision_rule(k, step)
         # 4. Move to initial city and compute each ant's tour length
         for ant in self.colony:
             ant.tour[-1] = ant.tour[0]
@@ -760,64 +774,69 @@ class ACO(Problem):
         self.colony[k].visited[j] = 1  # True
         return
 
-#    def neighbor_list_as_decision_rule(self, k, i):
-#        """ Neighbor list AS decision rule
-#
-#        The ants apply the Ant System (AS) action choice rule eq. 3.2, adapted
-#        to exploit candidate lists.
-#
-#        :param k: ant identifier
-#        :param i: counter for construction step
-#        """
-#        c = self.colony[k].tour[i-1]  # current city
-#        sum_probabilities = 0.0
-#        selection_probability = np.zeros(self.n, dtype=np.float)
-#        for j in range(self.nn_ants):
-#            if self.colony[k].visited[self.nn_list[c][j]]:
-#                selection_probability[j] = 0.0
-#            else:
-#                idx = self.nn_list[c][j]
-#                selection_probability[j] = self.choice_info[c][idx]
-#                sum_probabilities += selection_probability[j]
-#        if sum_probabilities == 0:
-#            self.choose_best_next(k, i)
-#        elif sum_probabilities < 0:
-#            # This should never be reached but still...
-#            print("Sum probabilities is lower than zero")
-#            self.choice_best_next(k, i)
-#        else:
-#            # Random number (Uniform) from interval [0, sum_probabilities)
-#            r = (sum_probabilities - 0) * np.random.random_sample() + 0
-#            j = 0
-#            p = selection_probability[j]
-#            while p < r:
-#                j += 1
-#                p += selection_probability[j]
-#            self.colony[k].tour[i] = self.nn_list[c][j]
-#            self.colony[k].visited[self.nn_list[c][j]] = 1  # True
-#        return
-#
-#    def choose_best_next(self, k, i):
-#        """ Choose best next
-#
-#        Identify the city with maximum value of tau^alpha * eta^beta
-#
-#        :param k:
-#        :param i:
-#        :return:
-#        """
-#        v = 0.0
-#        c = self.colony[k].tour[i - 1]  # current city
-#        nc = -1
-#        for j in range(self.n):
-#            if not self.colony[k].visited[j]:
-#                if self.choice_info[c][j] > v:
-#                    nc = j  # city with maximal tau^alpha * eta^beta
-#                    v = self.choice_info[c][j]
-#        # TODO: What happens if nc is -1?
-#        self.colony[k].tour[i] = nc
-#        self.colony[k].visited[nc] = 1  # True
-#        return
+    def neighbor_list_as_decision_rule(self, k, i):
+        """ Neighbor list AS decision rule
+
+        The ants apply the Ant System (AS) action choice rule eq. 3.2,
+        adapted to exploit candidate lists.
+
+        :param k: ant identifier
+        :param i: counter for construction step
+        """
+        # Choose best city from candidate list nn_list
+        c = self.colony[k].tour[i-1]  # current city
+        sum_probabilities = 0.0
+        selection_probability = np.zeros(self.n, dtype=np.float)
+        for j in range(self.nn_ants):
+            if self.colony[k].visited[self.nn_list[c][j]]:
+                selection_probability[j] = 0.0
+            else:
+                idx = self.nn_list[c][j]
+                selection_probability[j] = self.choice_info[c][idx]
+                sum_probabilities += selection_probability[j]
+
+        # All the cities in nn_list have been visited, con sum_probabilities
+        # is zero, in this case choose the best city outside nn_list.
+        if sum_probabilities <= 0:
+            # print("Sum probabilities is equal (or lower) than zero.")
+            self.choose_best_next(k, i)
+        else:
+            # Random number (Uniform) from interval [0, sum_probabilities)
+            r = (sum_probabilities - 0) * np.random.random_sample() + 0
+            j = 0
+            p = selection_probability[j]
+            while p < r:
+                j += 1
+                p += selection_probability[j]
+            self.colony[k].tour[i] = self.nn_list[c][j]
+            self.colony[k].visited[self.nn_list[c][j]] = 1  # True
+        return
+
+    def choose_best_next(self, k, i):
+        """ Choose best next
+
+        Identify the city with maximum value of tau^alpha * eta^beta, this
+        function is called when all the cities in the candidate list nn_list
+        are already visited.
+
+        :param k:
+        :param i:
+        :return:
+        """
+        v = 0.0
+        c = self.colony[k].tour[i - 1]  # current city
+        nc = 0
+
+        # Algorithm to find the maximum value
+        for j in range(self.n):
+            if not self.colony[k].visited[j]:
+                if self.choice_info[c][j] > v:
+                    nc = j  # city with maximal tau^alpha * eta^beta
+                    v = self.choice_info[c][j]
+
+        self.colony[k].tour[i] = nc
+        self.colony[k].visited[nc] = 1  # True
+        return
 
     def as_pheromone_update(self):
         """ AS pheromone update
@@ -884,9 +903,10 @@ if __name__ == "__main__":
     start = datetime.now()
     f = '%Y_%m_%d_%H_%M_%S'  # Date format
 
+    # The name of the problem to solve, should use in *.tsp or *.csv format
     prob = 'eil51.tsp'
 
-    # Save best tour & solution
+    # Save best tour & solution, WARNING: directories should exist!
     save_plot = 'results/' + prob + '/' + datetime.strftime(start, f) + '.png'
     save_best = 'results/' + prob + '/' + datetime.strftime(start, f) + '.txt'
 
@@ -896,11 +916,11 @@ if __name__ == "__main__":
     # instance = 'test_data/a280.tsp'
     instance = 'test_data/' + prob
 
-    n_ants = 10
+    n_ants = 50
 
     # Create the ACO object & run
-    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=100)
-    # tsp_aco.plot_nodes()
+    tsp_aco = ACO(n_ants, instance, nn_ants=20, rho=0.2, max_iters=1000)
+#    tsp_aco.plot_nodes()
     best = tsp_aco.run()
 
     # Show the results
