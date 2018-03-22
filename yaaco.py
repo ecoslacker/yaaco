@@ -391,6 +391,8 @@ class ACO(Problem):
 
         assert type(ants) is int, "The number of ants should be integer"
         assert type(filename) is str, "File name should be a string"
+        assert ants > 0, "Number of ants should be greater than zero"
+        assert filename != '', "Empty file name!"
 
         # Initialize class variables from arguments
         self.ants = ants
@@ -841,7 +843,10 @@ class ACO(Problem):
     def as_pheromone_update(self):
         """ AS pheromone update
 
-        Update the pheromone trace of the ants
+        Comprises two pheromone update procedures: pheromone evaporation and
+        pheromone deposit. Additionally, the procedure
+        compute_choice_information() computes the matrix choice_info to be
+        used in the next algorithm iteration.
         """
         self.evaporate()
         for ant in self.colony:
@@ -853,7 +858,8 @@ class ACO(Problem):
     def evaporate(self):
         """ Evaporate
 
-        Evaporate the pheromone trail of the ants
+        Decreases the values of the pheromone trails on all the arcs by a
+        constant factor rho. This uses matrix operations
         """
         self.pheromone = self.pheromone * (1.0 - self.rho)
         return
@@ -861,7 +867,8 @@ class ACO(Problem):
     def deposit_pheromone(self, ant):
         """ Deposit pheromone
 
-        Update the pheromone trail for the cities in the ant's tour
+        Adds pheromone to the arcs belonging to the tours constructed by
+        the ants
 
         :param Ant ant: the Ant instance that will be depositing pheromone
         """
@@ -875,6 +882,7 @@ class ACO(Problem):
             # Deposit pheromone, assumming symmetric problem
             self.pheromone[j][k] = self.pheromone[j][k] + delta
             self.pheromone[k][j] = self.pheromone[j][k]
+        return
 
     def compute_choice_information(self):
         """ Compute choice information
@@ -889,7 +897,9 @@ class ACO(Problem):
     def find_best(self):
         """ Find best
 
-        Find the best ant of current iteration
+        Find the best Ant object from the colony in the current iteration
+
+        :return: best ant, Ant object with the shortest tour length
         """
         best_ant = self.colony[0]
         for ant in self.colony:
@@ -919,7 +929,7 @@ if __name__ == "__main__":
     n_ants = 50
 
     # Create the ACO object & run
-    tsp_aco = ACO(n_ants, instance, nn_ants=20, rho=0.2, max_iters=1000)
+    tsp_aco = ACO(n_ants, instance, nn_ants=20, max_iters=1000)
 #    tsp_aco.plot_nodes()
     best = tsp_aco.run()
 
