@@ -921,9 +921,6 @@ if __name__ == "__main__":
     save_best = 'results/' + prob + '/' + datetime.strftime(start, f) + '.txt'
 
     # **** Problem instance data (TSP coordinates file) ****
-    # instance = 'test_data/network64.csv'
-    # instance = 'test_data/eil51.tsp'
-    # instance = 'test_data/a280.tsp'
     instance = 'test_data/' + prob
 
     n_ants = 50
