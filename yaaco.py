@@ -8,7 +8,8 @@ Yet Another Ant Colony Optimization Python Implementation
 An attempt to code the Ant Colony Optimization (ACO) metaheuristic to solve
 the Traveling Salesman Problem (TSP) in Python 2.7 language.
 
-IMPORTANT: This code only includes AS algorithms. Others to be included.
+IMPORTANT: This code only includes AS, EAS and AS-Rank algorithms. Others are
+pending to be included.
 
 To understand what this code does you should probably read the book:
 
@@ -23,6 +24,7 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from operator import attrgetter
 from datetime import datetime
 from math import sqrt, pow
 from matplotlib.path import Path
@@ -378,9 +380,9 @@ class ACO(Problem):
 
     Possible flags include:
         AS: Ant System (Default)
-        EAS: Elitist Ant System (Not yet implemented)
-        RAS: Rank-Based Ant System (Not yet implemented)
-        MMAS: Max-Min Ant System
+        EAS: Elitist Ant System
+        RAS: Rank-Based Ant System
+        MMAS: Max-Min Ant System (Not yet implemented)
     """
 
     def __init__(self, filename, **kwargs):
@@ -439,9 +441,12 @@ class ACO(Problem):
         self.tau_0 = self.ants / self.Cnn
         if self.flag is 'MMAS':
             self.tau_0 = 1.0 / (self.rho * self.Cnn)
-        if self.flag is 'EAS':
+        elif self.flag is 'EAS':
             self.tau_0 = 1.0 / (self.rho * self.Cnn)
             self.elitist_ants = self.ants
+        elif self.flag is 'RAS':
+            self.ras_ranks = 6  # This 'magic' value is from literature
+            assert self.ras_ranks < self.ants, "ras-ranks >= n_ants"
 
         self.create_colony(instance_type)
 
@@ -854,6 +859,8 @@ class ACO(Problem):
             self.as_pheromone_update()
         elif self.flag is 'EAS':
             self.eas_pheromone_update()
+        elif self.flag is 'RAS':
+            self.ras_pheromone_update()
 
         self.compute_choice_information()
         return
@@ -877,6 +884,19 @@ class ACO(Problem):
             self.deposit_pheromone(ant)
         self.deposit_pheromone_weighted(self.best_so_far_ant,
                                         float(self.elitist_ants))
+        return
+
+    def ras_pheromone_update(self):
+        """ Rank-based Ant System pheromone update
+
+        Manage global pheromone deposit for Rank-based Ant System
+        """
+        sorted_ants = sorted(self.colony, key=attrgetter('tour_length'))
+        for i in range(self.ras_ranks - 1):
+            self.deposit_pheromone_weighted(sorted_ants[i],
+                                            float(self.ras_ranks - i - 1))
+        self.deposit_pheromone_weighted(self.best_so_far_ant,
+                                        float(self.ras_ranks))
         return
 
     def evaporate(self):
@@ -961,7 +981,7 @@ if __name__ == "__main__":
     f = '%Y_%m_%d_%H_%M_%S'  # Date format
 
     # The name of the problem to solve, should use in *.tsp or *.csv format
-    prob = 'eil51.tsp'
+    prob = 'poke33'
 
     # Save best tour & solution, WARNING: directories should exist!
     save_plot = 'results/' + prob + '/' + datetime.strftime(start, f) + '.png'
@@ -971,7 +991,7 @@ if __name__ == "__main__":
     instance = 'test_data/' + prob
 
     # Create the ACO object & run
-    tsp_aco = ACO(instance, beta=5.0, max_iters=500, flag='EAS')
+    tsp_aco = ACO(instance, beta=5.0, max_iters=500, flag='RAS')
 #    tsp_aco.plot_nodes()
     best = tsp_aco.run()
 
