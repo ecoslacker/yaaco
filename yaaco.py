@@ -8,8 +8,8 @@ Yet Another Ant Colony Optimization Python Implementation
 An attempt to code the Ant Colony Optimization (ACO) metaheuristic to solve
 the Traveling Salesman Problem (TSP) in Python 2.7 language.
 
-IMPORTANT: This code only includes AS, EAS and AS-Rank algorithms. Others are
-pending to be included.
+IMPORTANT: This code only includes AS, EAS, AS-Rank and MAX-MIN AS algorithms.
+Others are pending to be included.
 
 To understand what this code does you should probably read the book:
 
@@ -34,6 +34,7 @@ from matplotlib.path import Path
 np.set_printoptions(threshold='nan')
 
 MAXFACTOR = 3
+EPSILON = 1e-6
 
 
 class Ant:
@@ -382,7 +383,7 @@ class ACO(Problem):
         AS: Ant System (Default)
         EAS: Elitist Ant System
         RAS: Rank-Based Ant System
-        MMAS: Max-Min Ant System (Not yet implemented)
+        MMAS: Max-Min Ant System
     """
 
     def __init__(self, filename, **kwargs):
@@ -438,11 +439,18 @@ class ACO(Problem):
         self.Cnn = self.compute_tour_length(self.ant)
 
         # Initial pheromone trail and other default parameters
-        self.tau_0 = self.ants / self.Cnn
+        self.note = "Initial iteration"
+        self.found_best = 0  # Iteration in which best solution is found
+        self.restart_best_ant = Ant(self.dimension, self.type)
+        self.restart_found_best = 0  # Iter in which restart_best_ant is found
+
+        self.trail_0 = self.ants / self.Cnn
         if self.flag is 'MMAS':
-            self.tau_0 = 1.0 / (self.rho * self.Cnn)
+            self.trail_0 = 1.0 / (self.rho * self.Cnn)
+            self.u_gb = 1  # every u_gb iterations update with best-so-far ant
+            self.restart_iteration = 1
         elif self.flag is 'EAS':
-            self.tau_0 = 1.0 / (self.rho * self.Cnn)
+            self.trail_0 = 1.0 / (self.rho * self.Cnn)
             self.elitist_ants = self.ants
         elif self.flag is 'RAS':
             self.ras_ranks = 6  # This 'magic' value is from literature
@@ -451,7 +459,7 @@ class ACO(Problem):
         self.create_colony(instance_type)
 
         # Initialize pheromone trail matrix
-        self.reset_pheromone(self.tau_0)
+        self.reset_pheromone(self.trail_0)
 
         # Heuristic information (eta)
         self.eta = 1.0 / (self.distance_matrix + 0.1)
@@ -463,8 +471,8 @@ class ACO(Problem):
         self.compute_choice_information()
 
         # Pheromone trails are initialized to upper pheromone trail limit
-        self.tau_max = 1.0 / (self.rho * self.Cnn)
-        self.tau_min = self.tau_max / (2.0 * self.n)
+        self.trail_max = 1.0 / (self.rho * self.Cnn)
+        self.trail_min = self.trail_max / (2.0 * self.n)
 
         # Initialize the variables concerning statistics
         self.iteration = 0
@@ -496,9 +504,9 @@ class ACO(Problem):
         text += "  flag:      {0}".format(self.flag) + "\n"
         text += "  init tour: {0} (length)".format(self.Cnn) + "\n"
         if self.flag == 'MMAS':
-            text += "  tau max:   {0}".format(self.tau_max) + "\n"
-            text += "  tau min:   {0}".format(self.tau_min) + "\n"
-        text += "  tau 0:     {0}".format(self.tau_0) + "\n"
+            text += "  trail max: {0}".format(self.trail_max) + "\n"
+            text += "  trail min: {0}".format(self.trail_min) + "\n"
+        text += "  trail 0:   {0}".format(self.trail_0) + "\n"
         text += "  dimension: {0}".format(self.n) + "\n"
         text += "Initial ant colony:\n"
         for ant in self.colony:
@@ -521,9 +529,9 @@ class ACO(Problem):
         print("  flag:      {0}".format(self.flag))
         print("  init tour: {0} (length)".format(self.Cnn))
         if self.flag == "MMAS":
-            print("  tau max:   {0}".format(self.tau_max))
-            print("  tau min:   {0}".format(self.tau_min))
-        print("  tau 0:     {0}".format(self.tau_0))
+            print("  trail max: {0}".format(self.trail_max))
+            print("  trail min: {0}".format(self.trail_min))
+        print("  trail 0:   {0}".format(self.trail_0))
         print("  dimension: {0}".format(self.n))
         if plot:
             print("  Initial tour (Using nearest-neighbor heuristic):")
@@ -566,8 +574,10 @@ class ACO(Problem):
         """
         fig1 = plt.figure()
         fig1.clear()
+
         plt.title("Problem: " + self.name)
-        plt.scatter(self.x, self.y)
+        plt.scatter(self.x, self.y, c='black')
+
         labels = ['{0}'.format(l) for l in range(len(self.x))]
         for label, lx, ly in zip(labels, self.x, self.y):
             plt.annotate(label, xy=(lx, ly), xytext=(-5, 5),
@@ -589,7 +599,8 @@ class ACO(Problem):
         """
         figBestTour = plt.figure()
         ax = figBestTour.add_subplot(1, 1, 1)
-        plt.scatter(self.x, self.y)
+
+        plt.scatter(self.x, self.y, c='black')
         plt.xlabel('x')
         plt.ylabel('y')
 
@@ -599,7 +610,7 @@ class ACO(Problem):
                          textcoords='offset points')
 
         length = self.best_so_far_ant.tour_length
-        plt.title('Best TSP tour (length={0})'.format(length))
+        plt.title('Best TSP tour (length={0:.2f})'.format(length))
         for j in range(self.dimension):
             p1 = self.best_so_far_ant.tour[j]    # Initial point
             p2 = self.best_so_far_ant.tour[j+1]  # Final point
@@ -611,7 +622,7 @@ class ACO(Problem):
             verts = [(x1, y1), (x2, y2)]
             codes = [Path.MOVETO, Path.LINETO]
             path = Path(verts, codes)
-            ax.add_patch(patches.PathPatch(path, lw=0.5))
+            ax.add_patch(patches.PathPatch(path, color='black', lw=0.5))
             # plt.xlim([min(self.x) - 50, max(self.x) + 50])
             # plt.ylim([min(self.y) - 50, max(self.y) + 50])
         # Save the plot to a file
@@ -634,27 +645,32 @@ class ACO(Problem):
         # Data initialization was already done in the __init__ function
 
         # 2. Loop
+        print("Iter\tTour len\tNote")
         while not self.termination_criteria():
-            print("Iteration {0}".format(self.iteration))
             self.tsp_construct_solutions()
 
             # Local search step is optional, nothing to do here!
 
             # Update statistics
-            iter_best_ant = self.find_best()
-
-            if iter_best_ant.tour_length < self.best_so_far_ant.tour_length:
-                self.best_so_far_ant = iter_best_ant.clone()
-                print("Best so far ant:")
-                print(self.best_so_far_ant)
+            self.update_statistics()
 
             # Update pheromone trails
             self.pheromone_trail_update()
+
+            # Search control and pheromone trail re-initialization
+            self.search_control()
+
+            # Console output
+            print("{0}\t{1}\t{2}".format(self.iteration,
+                  self.best_so_far_ant.tour_length, self.note))
+
             self.iteration += 1
+            self.note = ""
 
         # Measure execution time
         self.exec_time = datetime.now() - self.start
         print("Execution time: {0}".format(self.exec_time))
+        print("Best solution found at iteration: {0}".format(self.found_best))
         return self.best_so_far_ant
 
     def termination_criteria(self):
@@ -667,15 +683,6 @@ class ACO(Problem):
         :return bool: True if the termination criteria are satisfied
         """
         return self.iteration > self.max_iters
-
-#    def init_try(self):
-#        """ Initialize try
-#
-#        Initialize the parameters for each iteration of the algorithm
-#        """
-#        self.reset_pheromone(self.tau_0)
-#        self.compute_choice_information()
-#        self.exec_time = 0
 
     def tsp_construct_solutions(self):
         """ Construct solutions for TSP
@@ -729,6 +736,52 @@ class ACO(Problem):
             # print("  Distance {0}-{1}: {2}".format(c1, c2, length))
         ant.tour_length = length
         return ant.tour_length
+
+    def update_statistics(self):
+        """ Update statistics
+        Manage some statistical information about the trial, especially
+        if a new best solution (best-so-far or restart-best) is found and
+        adjust some parameters if a new best solution is found
+
+        Side effects: restart-best and best-so-far ant may be updated;
+        trail_min and trail_max used by MMAS may be updated
+        """
+        iter_best_ant = self.find_best()
+
+        # Update best so far ant
+        # if iter_best_ant.tour_length < self.best_so_far_ant.tour_length:
+        diff = self.best_so_far_ant.tour_length - iter_best_ant.tour_length
+        if diff > EPSILON:
+            self.best_so_far_ant = iter_best_ant.clone()
+            self.restart_best_ant = iter_best_ant.clone()
+
+            self.found_best = self.iteration
+            self.restart_found_best = self.iteration
+
+            # Update min and max pheromone trails
+            if self.flag is 'MMAS':
+                # Warning! This code doesn't consider local search
+                self.trail_max = 1. / (self.rho *
+                                       self.best_so_far_ant.tour_length)
+                self.trail_min = self.trail_max / (2. * self.n)
+                self.trail_0 = self.trail_max
+
+            # print("Best so far ant found:")
+            # print(self.best_so_far_ant)
+            self.note += "New best ant found. "
+
+        # Update restart best ant
+        # if iter_best_ant.tour_length < self.restart_best_ant.tour_length:
+        diff = self.restart_best_ant.tour_length - iter_best_ant.tour_length
+        if diff > EPSILON:
+            self.restart_best_ant = iter_best_ant.clone()
+            self.restart_found_best = self.iteration
+            self.note += "Restart best ant found (UID:{0}, {1}). ".format(
+                    self.restart_best_ant.uid,
+                    self.restart_best_ant.tour_length)
+            # print("Restart best ant found:")
+            # print(self.restart_best_ant)
+        return
 
     def as_decision_rule(self, k, i):
         """ AS decision rule
@@ -861,6 +914,9 @@ class ACO(Problem):
             self.eas_pheromone_update()
         elif self.flag is 'RAS':
             self.ras_pheromone_update()
+        elif self.flag is 'MMAS':
+            self.mmas_pheromone_update()
+            self.check_pheromone_trail_limits()
 
         self.compute_choice_information()
         return
@@ -891,12 +947,46 @@ class ACO(Problem):
 
         Manage global pheromone deposit for Rank-based Ant System
         """
+        # Sort the Ants by tour length in ascending order
         sorted_ants = sorted(self.colony, key=attrgetter('tour_length'))
+        # Only the first 'ras_ranks' ants (including best_so_far_ant) are
+        # allowed to deposit pheromone
         for i in range(self.ras_ranks - 1):
             self.deposit_pheromone_weighted(sorted_ants[i],
                                             float(self.ras_ranks - i - 1))
         self.deposit_pheromone_weighted(self.best_so_far_ant,
                                         float(self.ras_ranks))
+        return
+
+    def mmas_pheromone_update(self):
+        """ MAX-MIN Ant System pheromone update
+
+        Manage global pheromone deposit for MAX-MIN Ant System
+        """
+        # Update with iteration_best_ant
+        if (self.iteration % self.u_gb):
+            iter_best_ant = self.find_best()
+            self.deposit_pheromone(iter_best_ant)
+        else:
+            # Every u_gb iteration update with best_so_far_ant or with
+            # restart_best_ant, according to next rule:
+            no_improv = self.iteration - self.restart_found_best
+            if (self.u_gb == 1 and no_improv > 50):
+                # print("No improvement by 50 gens.")
+                self.note = "No improvement by 50 gens."
+                self.deposit_pheromone(self.best_so_far_ant)
+            else:
+                self.deposit_pheromone(self.restart_best_ant)
+        return
+
+    def check_pheromone_trail_limits(self):
+        """ Check pheromone trail limits
+
+        Only for MMAS without local search: keeps pheromone trails inside
+        trail limits. Pheromones are forced to interval [trail_min,trail_max]
+        """
+        self.pheromone = np.clip(self.pheromone, self.trail_min,
+                                 self.trail_max)
         return
 
     def evaporate(self):
@@ -974,6 +1064,30 @@ class ACO(Problem):
                 best_ant = ant.clone()
         return best_ant
 
+    def search_control(self):
+        """ Search control
+
+        Occasionally compute some statistics and check whether or not if the
+        algorithm is converged.
+
+        Side effects: restart_best and best_so_far_ant may be updated;
+        trail_min and trail_max used by MMAS may be updated.
+        """
+        if self.flag is 'MMAS':
+            if not (self.iteration % 100):
+                # MAX-MIN Ant System was the first ACO algorithm to use
+                # pheromone trail re-initialisation as implemented here,
+                # Other ACO algorithms may also profit from this mechanism.
+                # NOTE: remember for MMAS trail_0 == trail_max
+
+                # print("Restart point was reached")
+                self.note += "Restart point was reached."
+                self.restart_best_ant.tour_length = np.inf
+                self.reset_pheromone(self.trail_0)
+                self.compute_choice_information()
+                self.restart_iteration = self.iteration
+        return
+
 
 if __name__ == "__main__":
 
@@ -981,7 +1095,7 @@ if __name__ == "__main__":
     f = '%Y_%m_%d_%H_%M_%S'  # Date format
 
     # The name of the problem to solve, should use in *.tsp or *.csv format
-    prob = 'poke33'
+    prob = 'eil51.tsp'
 
     # Save best tour & solution, WARNING: directories should exist!
     save_plot = 'results/' + prob + '/' + datetime.strftime(start, f) + '.png'
@@ -991,8 +1105,8 @@ if __name__ == "__main__":
     instance = 'test_data/' + prob
 
     # Create the ACO object & run
-    tsp_aco = ACO(instance, beta=5.0, max_iters=500, flag='RAS')
-#    tsp_aco.plot_nodes()
+    tsp_aco = ACO(instance, max_iters=500, flag='MMAS')
+    tsp_aco.plot_nodes()
     best = tsp_aco.run()
 
     # Show the results
