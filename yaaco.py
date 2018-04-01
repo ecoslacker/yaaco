@@ -376,7 +376,7 @@ class ACO(Problem):
     :param float beta: the heuristic information influence
     :param int max_iters: maximum number of iterations of the algorithm
     :param str flag: type of algorithm to be used in the ACO metaheuristic
-    :param bool use_base_graph: True to use data from a base graph file
+    :param callabe function: a function for distance calculation
     :param str instance_type: Description of problem instance (Default 'TSP')
 
     Possible flags include:
