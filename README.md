@@ -12,18 +12,25 @@ references and bibliography.
 At the moment this script only works to solve the following problems:
 * Symmetric TSP (Traveling Salesman Problem)
 
-
 ## ACO metaheuristic
 
-At the moment this code only includes partial support for the AS algorithm,
-there are more algorithms in the ACO family that are not yet available. They
-will be added to this code eventually, just be patient and check the project
-change log.
+At the moment this code only includes support for Ant System (AS), Elitist Ant
+System (EAS), Rank-Based Ant System (RAS) and MAX-MIN Ant System (MMAS) algorithms.
+There are more algorithms in the ACO family that are not yet available.
+Also, local search is not supporteb at the moment.
+They will be added to this code eventually, just be patient and check the project change log.
+
+The default algorithm is AS, to use another algorithm the `flag` variable should be used.
+User should assing values to the algorithm's parameters, otherwise default values acording to literature are used.
+
+This code is closely based in the original [ACOTSP](http://www.aco-metaheuristic.org/aco-code/public-software.html) created by Thomas Stützle.
+It could be not *Pythonic* because the original code is in *C* language. The main advantages to use this code over the original,
+maybe the its simplicity, readability (for Non-C programmers) and graphical additions.
 
 ## Requirements
 
 This framework requires:
-* Python 2.7
+* Python 2.7 (Not tested in Python 3)
 * Numpy
 * Matplotlib
 
@@ -36,13 +43,13 @@ requirements easily. Be sure to install a Python 2.7 (not Python 3) instance.
 
 ## Installation
 
-Clone this project to your computer:
+For `git` users, clone this project to your computer:
 
 ```
 git clone https://github.com/ecoslacker/yaaco.git
 ```
 
-or download a **zip** copy and extract it.
+or download this repository as **zip** file (green button above) and extract it.
 
 This framework does not require installation, just copy the directory and run
 the main script from a Python interpreter.
@@ -55,6 +62,8 @@ metaheuristic algorithms.
 
 The problem instance data should be in a text file formatted as indicated in
 the [TSPLIB](https://www.iwr.uni-heidelberg.de/groups/comopt/software/TSPLIB95/) documentation ([here](https://www.iwr.uni-heidelberg.de/groups/comopt/software/TSPLIB95/tsp95.pdf)) for the symmetric TSP.
+
+NOTE: Only euclidean distance (`EUC_2D`) is acceptable for now. Other kind of distances will not work.
 
 ### Run directly
 
@@ -94,10 +103,18 @@ you can always import all the classes and functions to your main project. For
 this you only have to copy the `yaaco.py` file and import the classes:
 
 ```python
-from yaaco import Ant, Problem, ACO
+from yaaco import ACO
 ```
 
 Note that you need to configure the working directories properly.
+The `ACO` class imports the other classes by default, so `Ant` and `Problem` classes
+should not be imported unless necessary.
+
+## Contribute
+
+Contributors are welcome! If you want to improve this code please let me know by the proper channels.
+It is required that you know how to work with `git` and `github` though.
+Revisions, bugfixes and Python 3 testers are welcome.
 
 ## References
 

@@ -852,7 +852,7 @@ class ACO(Problem):
                 selection_probability[j] = self.choice_info[c][idx]
                 sum_probabilities += selection_probability[j]
 
-        # All the cities in nn_list have been visited, con sum_probabilities
+        # All the cities in nn_list have been visited, then sum_probabilities
         # is zero, in this case choose the best city outside nn_list.
         if sum_probabilities <= 0:
             # print("Sum probabilities is equal (or lower) than zero.")
@@ -1095,7 +1095,7 @@ if __name__ == "__main__":
     f = '%Y_%m_%d_%H_%M_%S'  # Date format
 
     # The name of the problem to solve, should use in *.tsp or *.csv format
-    prob = 'eil51.tsp'
+    prob = 'poke33'
 
     # Save best tour & solution, WARNING: directories should exist!
     save_plot = 'results/' + prob + '/' + datetime.strftime(start, f) + '.png'
@@ -1105,7 +1105,7 @@ if __name__ == "__main__":
     instance = 'test_data/' + prob
 
     # Create the ACO object & run
-    tsp_aco = ACO(instance, max_iters=500, flag='MMAS')
+    tsp_aco = ACO(instance, ants=10, max_iters=500, flag='MMAS')
     tsp_aco.plot_nodes()
     best = tsp_aco.run()
 
