@@ -17,7 +17,7 @@ At the moment this script only works to solve the following problems:
 At the moment this code only includes support for Ant System (AS), Elitist Ant
 System (EAS), Rank-Based Ant System (RAS) and MAX-MIN Ant System (MMAS) algorithms.
 There are more algorithms in the ACO family that are not yet available.
-Also, local search is not supporteb at the moment.
+Also, local search is not supported at the moment.
 They will be added to this code eventually, just be patient and check the project change log.
 
 The default algorithm is AS, to use another algorithm the `flag` variable should be used.
@@ -77,20 +77,39 @@ if __name__ == "__main__":
 You should not edit the code above this line unless you know what you are doing.
 
 First, you need to create an ACO object. You should pass the proper parameters,
-which are `ants` for the number of ants in the colony, `filename` a string 
-containing the path to a text file with the data (coordinates) of the problem instance, and
-`nn_ants` the number of ants in the nearest-neighbor. Other parameters are optional.
+only `filename` a string containing the path to a text file with the data (coordinates) of the problem instance is required.
+Other parameters are optional. Important parameters are:
 
-The following code is an example of the creation of an ACO object to solve the `eil51`
-problem, using a colony of 25 ants, 500 iterations and evaporation parameter of 0.2,
-using the the Ant System `AS` algorithm.
+* `filename`: a text file with the data of the problem instance
+* `ants`: number of ants in the colony
+* `nn_ants`: number of ants in the nearest-neighbor
+* `rho`: the pheromone evaporation parameter
+* `alpha`: the pheromone trail influence
+* `beta`: the heuristic information influence
+* `max_iters`: maximum number of iterations of the algorithm
+* `flag`: type of algorithm to be used in the ACO metaheuristic
+* `function`: a function for distance calculation
+* `instance_type`: Description of problem instance (Default 'TSP')
+
+Possible flags include:
+
+* AS: Ant System (Default)
+* EAS: Elitist Ant System
+* RAS: Rank-Based Ant System
+* MMAS: Max-Min Ant System
+
+Please refer to code documentation to more detailed description.
+
+### Example
+
+The following code is an example of the creation of an ACO object to solve the `eil51` problem,
+using a colony of 25 ants, 500 iterations, evaporation parameter of 0.2 and the `MMAS` algorithm.
 
 ```python
     instance = 'test_data/eil51.tsp'
-    n_ants = 25
 
     # Create the ACO object & run
-    tsp_aco = ACO(n_ants, instance, rho=0.2, max_iters=500, flag='AS')
+    tsp_aco = ACO(instance, ants=25, rho=0.2, max_iters=500, flag='MMAS')
     best = tsp_aco.run()
 ```
 
