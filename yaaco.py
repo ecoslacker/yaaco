@@ -50,13 +50,15 @@ class Ant:
 
     def __init__(self, size, atype='Symmetric TSP'):
         """ Initialize the Ant object """
-        assert type(size) is int, "The Ant size should be integer type"
+        assert type(size) is int, "the Ant size should be integer type"
+        assert size > 0, "negative dimensions are not allowed"
         self.size = size
         self.ant_type = atype
+        # Increase unique ID when an Ant instance is created
         self.uid = self.__class__.uid
         self.__class__.uid += 1
+        # Initialize tour
         self.tour_length = np.inf
-
         self.tour = np.ones(self.size, dtype=np.int64) * -1
         self.visited = np.zeros(self.size, dtype=np.int64)
 
@@ -585,7 +587,8 @@ class ACO(Problem):
         plt.axis('equal')
         # Save the plot to a PNG file
         if filename != '':
-            plt.savefig(filename, bbox_inches='tight', dpi=150)
+            plt.savefig(filename, bbox_inches='tight', dpi=300,
+                        transparent=True)
         plt.show()
 
     def plot_best_tour(self, filename=''):
@@ -593,6 +596,15 @@ class ACO(Problem):
 
         Plot the complete tour of the best_so_far_ant instance. If called at
         the end of run() this will plot the best overall tour.
+
+        :param str filename: path and file name to save the plot figure
+        """
+        self.plot_tour(self.best_so_far_ant, filename)
+
+    def plot_tour(self, ant, filename=''):
+        """ Plot an Ant's tour
+
+        Plot the complete tour of the Ant instance passed as parameter.
 
         :param Ant ant: an instance of the Ant class
         :param str filename: path and file name to save the plot figure
@@ -609,11 +621,11 @@ class ACO(Problem):
             plt.annotate(label, xy=(lx, ly), xytext=(-5, 5),
                          textcoords='offset points')
 
-        length = self.best_so_far_ant.tour_length
-        plt.title('Best TSP tour (length={0:.2f})'.format(length))
+        length = ant.tour_length
+        plt.title('TSP tour (length={0:.2f})'.format(length))
         for j in range(self.dimension):
-            p1 = self.best_so_far_ant.tour[j]    # Initial point
-            p2 = self.best_so_far_ant.tour[j+1]  # Final point
+            p1 = ant.tour[j]    # Initial point
+            p2 = ant.tour[j+1]  # Final point
             # Draw a line from (x1, y1) to (x2, y2)
             x1 = self.x[p1]
             y1 = self.y[p1]
@@ -627,7 +639,8 @@ class ACO(Problem):
             # plt.ylim([min(self.y) - 50, max(self.y) + 50])
         # Save the plot to a file
         if filename != '':
-            plt.savefig(filename, bbox_inches='tight', dpi=150)
+            plt.savefig(filename, bbox_inches='tight', dpi=300,
+                        transparent=True)
         plt.show()
 
     def run(self):
@@ -706,6 +719,8 @@ class ACO(Problem):
             step += 1
             for k in range(self.ants):
                 if self.use_nn:
+                    # The use of nn_list does not reduce the length of ant's
+                    # tours, it just gives priority to the fisrt cities.
                     self.neighbor_list_as_decision_rule(k, step)
                 else:
                     self.as_decision_rule(k, step)
@@ -1095,7 +1110,7 @@ if __name__ == "__main__":
     f = '%Y_%m_%d_%H_%M_%S'  # Date format
 
     # The name of the problem to solve, should use in *.tsp or *.csv format
-    prob = 'poke33'
+    prob = 'eil51.tsp'
 
     # Save best tour & solution, WARNING: directories should exist!
     save_plot = 'results/' + prob + '/' + datetime.strftime(start, f) + '.png'
@@ -1105,7 +1120,7 @@ if __name__ == "__main__":
     instance = 'test_data/' + prob
 
     # Create the ACO object & run
-    tsp_aco = ACO(instance, ants=10, max_iters=500, flag='MMAS')
+    tsp_aco = ACO(instance, ants=20, max_iters=500, flag='MMAS')
     tsp_aco.plot_nodes()
     best = tsp_aco.run()
 
