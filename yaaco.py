@@ -682,7 +682,7 @@ class ACO(Problem):
                     np.amax(len_values),
                     np.amin(len_values),
                     np.mean(len_values),
-                    np.var(len_values)]
+                    np.std(len_values)]
             global_stats.append(stats)
             print("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}".format(stats[0], stats[1],
                   stats[2], stats[3], stats[4], stats[5], self.note))
@@ -1117,32 +1117,21 @@ class ACO(Problem):
 
 if __name__ == "__main__":
 
-    start = datetime.now()
-    f = '%Y_%m_%d_%H_%M_%S'  # Date format
+    # Example of single execution of ACO for TSP
 
     # The name of the problem to solve, should use in *.tsp or *.csv format
     prob = 'eil51.tsp'
-
-    # Save best tour & solution, WARNING: directories should exist!
-    save_plot = 'results/' + prob + '/' + datetime.strftime(start, f) + '.png'
-    save_best = 'results/' + prob + '/' + datetime.strftime(start, f) + '.txt'
 
     # **** Problem instance data (TSP coordinates file) ****
     instance = 'test_data/' + prob
 
     # Create the ACO object & run
-    tsp_aco = ACO(instance, ants=25, max_iters=1000, flag='MMAS')
+    tsp_aco = ACO(instance, ants=20, max_iters=500, flag='MMAS')
     tsp_aco.plot_nodes()
     best, stats = tsp_aco.run()
 
     # Show the results
-    print("\nBest overall solution:")
+    print("\n*** Best overall solution ***")
     print(best)
-
-    # Save the results
-    with open(save_best, 'w') as f:
-        f.write('{0}\n'.format(tsp_aco))
-        f.write('Best overall solution:\n{0}\n'.format(best))
-        f.write('Initialization time: {0}\n'.format(tsp_aco.init_time))
-        f.write('Execution time: {0}\n'.format(tsp_aco.exec_time))
-    tsp_aco.plot_best_tour(save_plot)
+    print("*****************************")
+    tsp_aco.plot_best_tour()
