@@ -35,7 +35,7 @@ np.set_printoptions(threshold='nan')
 
 MAXFACTOR = 3
 EPSILON = 1e-6
-
+STAGNATION = 50
 
 class Ant:
     """ Single ant
@@ -441,7 +441,7 @@ class ACO(Problem):
         self.Cnn = self.compute_tour_length(self.ant)
 
         # Initial pheromone trail and other default parameters
-        self.note = "Initial iteration"
+        self.note = "Init iter"
         self.found_best = 0  # Iteration in which best solution is found
         self.restart_best_ant = Ant(self.dimension, self.type)
         self.restart_found_best = 0  # Iter in which restart_best_ant is found
@@ -643,7 +643,7 @@ class ACO(Problem):
                         transparent=True)
         plt.show()
 
-    def run(self):
+    def run(self, execution=0):
         """ Run
 
         Call this function to actually run the ACO metaheuristic. All the ants
@@ -656,6 +656,8 @@ class ACO(Problem):
         print("*** Running Ant Colony Optimization ***")
         # 1. Initialize data:
         # Data initialization was already done in the __init__ function
+        
+        global_stats = []
 
         # 2. Loop
         print("Iter\tTour len\tNote")
@@ -674,8 +676,18 @@ class ACO(Problem):
             self.search_control()
 
             # Console output
-            print("{0}\t{1}\t{2}".format(self.iteration,
-                  self.best_so_far_ant.tour_length, self.note))
+            len_values = np.array([ant.tour_length for ant in self.colony])
+            stats = [execution,
+                    self.iteration,
+                    np.amax(len_values),
+                    np.amin(len_values),
+                    np.mean(len_values),
+                    np.var(len_values)]
+            global_stats.append(stats)
+            print("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}".format(stats[0], stats[1],
+                  stats[2], stats[3], stats[4], stats[5], self.note))
+#            print("{0}\t{1}\t{2}".format(self.iteration,
+#                  self.best_so_far_ant.tour_length, self.note))
 
             self.iteration += 1
             self.note = ""
@@ -684,7 +696,7 @@ class ACO(Problem):
         self.exec_time = datetime.now() - self.start
         print("Execution time: {0}".format(self.exec_time))
         print("Best solution found at iteration: {0}".format(self.found_best))
-        return self.best_so_far_ant
+        return self.best_so_far_ant, global_stats
 
     def termination_criteria(self):
         """ Termination criteria
@@ -783,7 +795,7 @@ class ACO(Problem):
 
             # print("Best so far ant found:")
             # print(self.best_so_far_ant)
-            self.note += "New best ant found. "
+            self.note += "New best ant"
 
         # Update restart best ant
         # if iter_best_ant.tour_length < self.restart_best_ant.tour_length:
@@ -791,11 +803,10 @@ class ACO(Problem):
         if diff > EPSILON:
             self.restart_best_ant = iter_best_ant.clone()
             self.restart_found_best = self.iteration
-            self.note += "Restart best ant found (UID:{0}, {1}). ".format(
-                    self.restart_best_ant.uid,
-                    self.restart_best_ant.tour_length)
-            # print("Restart best ant found:")
-            # print(self.restart_best_ant)
+            self.note += "Restart best ant"
+#            self.note += "Restart best ant (UID:{0}, {1:0.2f}). ".format(
+#                    self.restart_best_ant.uid,
+#                    self.restart_best_ant.tour_length)
         return
 
     def as_decision_rule(self, k, i):
@@ -986,9 +997,9 @@ class ACO(Problem):
             # Every u_gb iteration update with best_so_far_ant or with
             # restart_best_ant, according to next rule:
             no_improv = self.iteration - self.restart_found_best
-            if (self.u_gb == 1 and no_improv > 50):
-                # print("No improvement by 50 gens.")
-                self.note = "No improvement by 50 gens."
+            if (self.u_gb == 1 and no_improv > STAGNATION):
+                # print("No improvement by STAGNATION gens.")
+                self.note = "Stagnation {0} gen".format(STAGNATION)
                 self.deposit_pheromone(self.best_so_far_ant)
             else:
                 self.deposit_pheromone(self.restart_best_ant)
@@ -1120,9 +1131,9 @@ if __name__ == "__main__":
     instance = 'test_data/' + prob
 
     # Create the ACO object & run
-    tsp_aco = ACO(instance, ants=20, max_iters=500, flag='MMAS')
+    tsp_aco = ACO(instance, ants=25, max_iters=1000, flag='MMAS')
     tsp_aco.plot_nodes()
-    best = tsp_aco.run()
+    best, stats = tsp_aco.run()
 
     # Show the results
     print("\nBest overall solution:")
