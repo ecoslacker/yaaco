@@ -86,4 +86,4 @@ if __name__ == "__main__":
     prob = 'eil51.tsp'
     res = 'results/'
     
-    aco_execs(data, prob, res, execs=3)
+    aco_execs(data, prob, res, execs=30)
