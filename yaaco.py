@@ -660,7 +660,7 @@ class ACO(Problem):
         global_stats = []
 
         # 2. Loop
-        print("Iter\tTour len\tNote")
+        print("Exec\tIter\tMax\t\tMin\t\tAvg\t\tStd\t\tComment")
         while not self.termination_criteria():
             self.tsp_construct_solutions()
 
@@ -1117,16 +1117,16 @@ class ACO(Problem):
 
 if __name__ == "__main__":
 
-    # Example of single execution of ACO for TSP
+    # Example of a single execution
 
-    # The name of the problem to solve, should use in *.tsp or *.csv format
-    prob = 'eil51.tsp'
-
-    # **** Problem instance data (TSP coordinates file) ****
-    instance = 'test_data/' + prob
+    # The problem instance should be a *.tsp file according to the TSPLIB 
+    # (http://elib.zib.de/pub/mp-testdata/tsp/tsplib/tsplib.html) for
+    # a symmetric traveling salesman problem (TSP) with euclidean distance
+    # IMPORTANT! Other kind of problems are not supported at the moment!
+    instance = 'test_data/eil51.tsp'
 
     # Create the ACO object & run
-    tsp_aco = ACO(instance, ants=20, max_iters=500, flag='MMAS')
+    tsp_aco = ACO(instance, ants=20, max_iters=400, flag='MMAS')
     tsp_aco.plot_nodes()
     best, stats = tsp_aco.run()
 
