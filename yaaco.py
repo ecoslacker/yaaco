@@ -510,9 +510,7 @@ class ACO(Problem):
             text += "  trail min: {0}".format(self.trail_min) + "\n"
         text += "  trail 0:   {0}".format(self.trail_0) + "\n"
         text += "  dimension: {0}".format(self.n) + "\n"
-        text += "Initial ant colony:\n"
-        for ant in self.colony:
-            text += "{0}".format(ant) + "\n"
+
         return text
 
     def show_initialization(self, matrices=True, plot=False):
