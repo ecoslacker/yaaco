@@ -27,7 +27,7 @@ def aco_execs(data_dir, prob, res_dir, **kwargs):
     :param str res_dir: path to save the results.
     :param int execs: number of executions of the algorithm.
     :param int ants: ant colony size or number of ants.
-    :param int iters: number of iterations.
+    :param int gens: number of iterations.
     :param str flag: algorithm to use: AS, EAS, RAS or MMAS
     """
     
@@ -94,24 +94,24 @@ def aco_execs(data_dir, prob, res_dir, **kwargs):
 def plot_convergence(execs, gens, file_stats):
     """ Creates a convergence chart
 
-    Plot the fitness of each generation to create a convergence chart, using
-    the data saved in the file created by the evolution.
+    Plots the values of each iteration to create a convergence chart, using
+    the data saved in the statistics file created by the algorithm.
 
     :param execs, number of executions or runs
-    :param gens, generations of each execution
-    :param file_stats, CSV file containing data from evolution
+    :param gens, generations or of each execution
+    :param file_stats, CSV file containing statistics data
     """
 
-    HEADER = 1   # Header rows
-    COL_GEN = 1  # Exec
-    COL_MIN = 3  # Min
+    HEADER = 1    # Header rows
+    COL_ITER = 1  # Iter
+    COL_MIN = 3   # Min
 
     # Create the figure
     figConvergence = plt.figure()
 
     # Read all the data from the file
     gen = []
-    rmin = []
+    values = []
 
     with open(file_stats, 'r') as f:
         reader = csv.reader(f, delimiter='\t')
@@ -119,26 +119,26 @@ def plot_convergence(execs, gens, file_stats):
         for row in reader:
             # Convert to numeric values, ignore headers
             if i >= HEADER:
-                gen.append(int(row[COL_GEN]))      # Generation
-                rmin.append(float(row[COL_MIN]))   # Raw minimum
+                gen.append(int(row[COL_ITER]))      # Generation
+                values.append(float(row[COL_MIN]))   # Raw minimum
             i += 1
 
     # Get the data slicing through executions, each run contains all its
     # generations and fitness
     ini = 0
     end = gens
-    best = rmin[ini:end]
+    best = values[ini:end]
     g = gen[ini:end]
 
     # Get the best of each generation
     for r in range(execs):
-        y = rmin[ini:end]
+        y = values[ini:end]
         for i in range(len(y)):
             if y[i] < best[i]:
                 best[i] = y[i]
         ini += gens
         end += gens
-
+    
     # Plot the data: generation vs best fitness
     plt.plot(g, best, c='black')
 
@@ -148,7 +148,7 @@ def plot_convergence(execs, gens, file_stats):
 
     plt.title('Convergence chart for {0} executions.'.format(execs))
     plt.xlabel('Generation')
-    plt.ylabel('Cost')
+    plt.ylabel('Value')
     plt.savefig(file_fig, bbox_inches='tight', dpi=300, transparent=True)
     figConvergence.show()
 
@@ -159,5 +159,5 @@ if __name__ == "__main__":
     prob = 'eil51.tsp'
     res = 'results/'
     
-    aco_execs(data, prob, res, execs=3)
+    aco_execs(data, prob, res, execs=30)
 
