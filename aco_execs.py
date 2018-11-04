@@ -5,6 +5,8 @@ Created on Sat Nov  3 01:28:26 2018
 
 @author: eduardo
 """
+import csv
+import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 from yaaco import ACO
@@ -12,8 +14,13 @@ from yaaco import ACO
 def aco_execs(data_dir, prob, res_dir, **kwargs):
     """ Execute ACO for the Symmetric TSP 
     
-    Execute the Ant Colony Optimization several times to search for good
-    solutions to the indicated instance problem of symmetric TSP problem.
+    Execute the Ant Colony Optimization algorithm several times in search for
+    good solutions to the specified instance of the symmetric Traveling
+    Salesman Problem.
+    
+    This function will save files with the best solution and execution
+    statistics to the results directory, also best tour and convergence plots
+    are saved.
 
     :param str data_dir: path where the input TSP file is located.
     :param str prob: problem TSP data.
@@ -69,6 +76,8 @@ def aco_execs(data_dir, prob, res_dir, **kwargs):
 
     # Save the results
     with open(f_best, 'w') as f:
+        f.write(str(tsp_aco))
+        f.write('\n')
         f.write('Best overall solution:\n{0}\n'.format(best_sol))
     best_aco.plot_best_tour(f_plot)
     
@@ -76,8 +85,72 @@ def aco_execs(data_dir, prob, res_dir, **kwargs):
     print("\nBest overall solution:")
     print(best_sol)
     
+    # Save convergence plot
+    plot_convergence(_execs, _iters, f_stat)
+    
     end = datetime.now() - start
     print ('Runtime: {0} executions in {1}'.format(_execs, end))
+
+def plot_convergence(execs, gens, file_stats):
+    """ Creates a convergence chart
+
+    Plot the fitness of each generation to create a convergence chart, using
+    the data saved in the file created by the evolution.
+
+    :param execs, number of executions or runs
+    :param gens, generations of each execution
+    :param file_stats, CSV file containing data from evolution
+    """
+
+    HEADER = 1   # Header rows
+    COL_GEN = 1  # Exec
+    COL_MIN = 3  # Min
+
+    # Create the figure
+    figConvergence = plt.figure()
+
+    # Read all the data from the file
+    gen = []
+    rmin = []
+
+    with open(file_stats, 'r') as f:
+        reader = csv.reader(f, delimiter='\t')
+        i = 0
+        for row in reader:
+            # Convert to numeric values, ignore headers
+            if i >= HEADER:
+                gen.append(int(row[COL_GEN]))      # Generation
+                rmin.append(float(row[COL_MIN]))   # Raw minimum
+            i += 1
+
+    # Get the data slicing through executions, each run contains all its
+    # generations and fitness
+    ini = 0
+    end = gens
+    best = rmin[ini:end]
+    g = gen[ini:end]
+
+    # Get the best of each generation
+    for r in range(execs):
+        y = rmin[ini:end]
+        for i in range(len(y)):
+            if y[i] < best[i]:
+                best[i] = y[i]
+        ini += gens
+        end += gens
+
+    # Plot the data: generation vs best fitness
+    plt.plot(g, best, c='black')
+
+    # Create a new file with PNG extension to save the chart
+    file_fig = file_stats[:-4]
+    file_fig = file_fig + ".png"
+
+    plt.title('Convergence chart for {0} executions.'.format(execs))
+    plt.xlabel('Generation')
+    plt.ylabel('Cost')
+    plt.savefig(file_fig, bbox_inches='tight', dpi=300, transparent=True)
+    figConvergence.show()
 
 
 if __name__ == "__main__":
@@ -86,4 +159,5 @@ if __name__ == "__main__":
     prob = 'eil51.tsp'
     res = 'results/'
     
-    aco_execs(data, prob, res, execs=30)
+    aco_execs(data, prob, res, execs=3)
+
