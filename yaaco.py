@@ -1106,8 +1106,8 @@ class ACO(Problem):
                 # Other ACO algorithms may also profit from this mechanism.
                 # NOTE: remember for MMAS trail_0 == trail_max
 
-                # print("Restart point was reached")
-                self.note += "Restart point was reached."
+                # print("Restart point")
+                self.note += "Restart point"
                 self.restart_best_ant.tour_length = np.inf
                 self.reset_pheromone(self.trail_0)
                 self.compute_choice_information()
