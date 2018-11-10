@@ -29,6 +29,10 @@ def aco_execs(data_dir, prob, res_dir, **kwargs):
     :param int ants: ant colony size or number of ants.
     :param int gens: number of iterations.
     :param str flag: algorithm to use: AS, EAS, RAS or MMAS
+    :param int nn_ants: number of ants in the nearest-neighbor
+    :param float rho: the pheromone evaporation parameter
+    :param float alpha: the pheromone trail influence
+    :param float beta: the heuristic information influence
     """
     
     start = datetime.now()
@@ -37,7 +41,11 @@ def aco_execs(data_dir, prob, res_dir, **kwargs):
     _execs = kwargs.get('execs', 10)
     _ants = kwargs.get('ants', 20)
     _iters = kwargs.get('iters', 500)
-    _flag = kwargs.get('flag', 'MMAS')
+    _flag = kwargs.get('flag', 'AS')
+    _alpha = kwargs.get('alpha', 1.0)
+    _beta = kwargs.get('beta', 2.0)
+    _rho = kwargs.get('rho', 0.5)
+    _nn = kwargs.get('nn_ants', 20)
     
     df = '%Y_%m_%d_%H_%M_%S'  # Date format
     instance = data_dir + prob
@@ -59,7 +67,8 @@ def aco_execs(data_dir, prob, res_dir, **kwargs):
 
         # **** Problem instance data (TSP coordinates file) ****
         # Create the ACO object & run
-        tsp_aco = ACO(instance, ants=_ants, max_iters=_iters, flag=_flag)
+        tsp_aco = ACO(instance, ants=_ants, max_iters=_iters, flag=_flag,
+                      alpha=_alpha, beta=_beta, rho=_rho, nn_ants=_nn)
         best, stats = tsp_aco.run(i)
         
         # Find the best solution with minimal tour length
@@ -79,7 +88,7 @@ def aco_execs(data_dir, prob, res_dir, **kwargs):
         f.write(str(tsp_aco))
         f.write('\n')
         f.write('Best overall solution:\n{0}\n'.format(best_sol))
-    best_aco.plot_best_tour(f_plot)
+    best_aco.plot_best_tour(f_plot, False)
     
     # Show the results
     print("\nBest overall solution:")
@@ -159,5 +168,4 @@ if __name__ == "__main__":
     prob = 'eil51.tsp'
     res = 'results/'
     
-    aco_execs(data, prob, res, execs=30)
-
+    aco_execs(data, prob, res, execs=30, flag='MMAS')

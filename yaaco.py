@@ -565,7 +565,7 @@ class ACO(Problem):
         """
         self.pheromone = np.ones((self.n, self.n), dtype=np.float) * level
 
-    def plot_nodes(self, filename=''):
+    def plot_nodes(self, filename='', show=True):
         """ Plot nodes
 
         Plots the nodes of the problem
@@ -587,9 +587,10 @@ class ACO(Problem):
         if filename != '':
             plt.savefig(filename, bbox_inches='tight', dpi=300,
                         transparent=True)
-        plt.show()
+        if show:
+            plt.show()
 
-    def plot_best_tour(self, filename=''):
+    def plot_best_tour(self, filename='', show=True):
         """ Plot best tour
 
         Plot the complete tour of the best_so_far_ant instance. If called at
@@ -597,9 +598,9 @@ class ACO(Problem):
 
         :param str filename: path and file name to save the plot figure
         """
-        self.plot_tour(self.best_so_far_ant, filename)
+        self.plot_tour(self.best_so_far_ant, filename, show)
 
-    def plot_tour(self, ant, filename=''):
+    def plot_tour(self, ant, filename='', show=True):
         """ Plot an Ant's tour
 
         Plot the complete tour of the Ant instance passed as parameter.
@@ -639,7 +640,8 @@ class ACO(Problem):
         if filename != '':
             plt.savefig(filename, bbox_inches='tight', dpi=300,
                         transparent=True)
-        plt.show()
+        if show:
+            plt.show()
 
     def run(self, execution=0):
         """ Run
